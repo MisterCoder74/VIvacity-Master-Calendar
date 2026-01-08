@@ -1,0 +1,29 @@
+# Enable directory index
+Options +Indexes
+
+# Set default character set
+AddDefaultCharset UTF-8
+
+# Security headers
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set X-XSS-Protection "1; mode=block"
+</IfModule>
+
+# Prevent directory listing
+Options -Indexes
+
+# Rewrite rules (optional, for clean URLs)
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # Redirect to https in production (uncomment for production)
+    # RewriteCond %{HTTPS} off
+    # RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+</IfModule>
+
+# MIME types
+AddType application/json .json
+AddType text/css .css
+AddType application/javascript .js

@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="VIvacity Master Calendar - Dashboard">
+    <title>Dashboard - VIvacity Master Calendar</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <!-- Loading State -->
+    <div id="loading-spinner" class="spinner-container">
+        <div class="text-center">
+            <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-3 text-muted">Verifying your session...</p>
+        </div>
+    </div>
+
+    <!-- Dashboard Content (hidden until authenticated) -->
+    <div id="dashboard-content" style="display: none;">
+        <!-- Navbar -->
+        <nav class="navbar navbar-expand-lg dashboard-navbar">
+            <div class="container-fluid">
+                <!-- Brand -->
+                <a class="navbar-brand" href="/dashboard.html">
+                    <span>📅</span>
+                    <span>VIvacity</span>
+                </a>
+
+                <!-- User Profile Area -->
+                <div class="user-profile-area">
+                    <div class="user-profile-toggle" onclick="Auth.toggleUserDropdown()">
+                        <img 
+                            id="user-picture" 
+                            class="user-profile-picture" 
+                            src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236c757d'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E"
+                            alt="Profile"
+                        >
+                        <span id="user-name" class="user-name">Loading...</span>
+                        <i class="bi bi-chevron-down"></i>
+                    </div>
+
+                    <!-- User Dropdown Menu -->
+                    <div id="user-dropdown" class="user-dropdown">
+                        <div class="user-dropdown-info">
+                            <strong id="dropdown-name">User Name</strong>
+                            <p id="dropdown-email" class="user-dropdown-email mb-0">user@example.com</p>
+                        </div>
+                        <button class="btn-logout" onclick="Auth.logout()">
+                            <i class="bi bi-box-arrow-right"></i> Sign Out
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="dashboard-main">
+            <div class="container">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="welcome-card">
+                            <h1 id="welcome-title" class="welcome-title">Welcome!</h1>
+                            <p id="welcome-message" class="welcome-message">
+                                Calendar features coming soon...
+                            </p>
+                            
+                            <div class="features-coming">
+                                <span class="feature-badge">📅 Smart Calendar</span>
+                                <span class="feature-badge">🤖 AI Scheduling</span>
+                                <span class="feature-badge">🔔 Smart Reminders</span>
+                                <span class="feature-badge">📊 Analytics</span>
+                                <span class="feature-badge">🔄 Integrations</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Auth Module -->
+    <script src="/js/auth.js"></script>
+    
+    <!-- Dashboard Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                // Check session
+                const user = await Auth.checkSession();
+
+                if (!user) {
+                    // Not authenticated, redirect to login
+                    window.location.href = '/index.html';
+                    return;
+                }
+
+                // User is authenticated, update UI with user data
+                updateUserInterface(user);
+
+                // Hide loading spinner and show dashboard
+                document.getElementById('loading-spinner').style.display = 'none';
+                document.getElementById('dashboard-content').style.display = 'block';
+
+                console.log('User authenticated:', user.name);
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+                Auth.showToast('Error loading dashboard. Please try again.', 'error');
+                
+                // Redirect to login on error
+                setTimeout(() => {
+                    window.location.href = '/index.html';
+                }, 2000);
+            }
+        });
+
+        /**
+         * Update the dashboard UI with user data
+         * @param {Object} user - User object from session
+         */
+        function updateUserInterface(user) {
+            // Update user picture
+            const userPicture = document.getElementById('user-picture');
+            if (user.profile_picture) {
+                userPicture.src = user.profile_picture;
+            }
+
+            // Update user name
+            document.getElementById('user-name').textContent = user.name || 'User';
+            document.getElementById('dropdown-name').textContent = user.name || 'User';
+
+            // Update user email
+            document.getElementById('dropdown-email').textContent = user.email || '';
+
+            // Update welcome message
+            document.getElementById('welcome-title').textContent = `Welcome, ${user.name || 'User'}!`;
+            document.getElementById('welcome-message').textContent = 
+                `You're all set up, ${user.name?.split(' ')[0] || 'User'}! Calendar features are coming soon. Stay tuned!`;
+        }
+    </script>
+</body>
+</html>
