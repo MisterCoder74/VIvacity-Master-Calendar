@@ -23,6 +23,10 @@ define('DATA_DIR', ROOT_DIR . '/data');
 
 // Define JSON file paths
 define('USERS_JSON_PATH', DATA_DIR . '/users.json');
+define('TASKS_JSON_PATH', DATA_DIR . '/tasks.json');
+define('EVENTS_JSON_PATH', DATA_DIR . '/events.json');
+define('TIMEBLOCKS_JSON_PATH', DATA_DIR . '/timeblocks.json');
+define('USER_PREFS_JSON_PATH', DATA_DIR . '/user_prefs.json');
 
 // Load Google OAuth configuration
 $oauth_config = require CONFIG_DIR . '/google_oauth_config.php';

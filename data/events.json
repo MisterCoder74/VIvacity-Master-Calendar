@@ -1,0 +1,115 @@
+{
+  "events": [
+    {
+      "id": "event_67805f5c1b1a1",
+      "userId": "user_example_12345",
+      "title": "Code Review Session",
+      "description": "Weekly team code review meeting",
+      "type": "meeting",
+      "startDate": "2026-01-10",
+      "startTime": "15:00",
+      "endDate": "2026-01-10",
+      "endTime": "16:00",
+      "duration": 60,
+      "location": "Virtual",
+      "attendees": [
+        {
+          "name": "John Doe",
+          "email": "john@example.com",
+          "status": "accepted"
+        },
+        {
+          "name": "Jane Smith",
+          "email": "jane@example.com",
+          "status": "pending"
+        }
+      ],
+      "platform": "zoom",
+      "platformLink": "https://zoom.us/j/123456789",
+      "status": "scheduled",
+      "isRecurring": true,
+      "recurringPattern": {
+        "frequency": "weekly",
+        "interval": 1,
+        "daysOfWeek": ["friday"]
+      },
+      "notes": "Review PRs and discuss architecture decisions",
+      "hasNotes": true,
+      "actionItems": ["task_67805f5c1a4d6"],
+      "createdAt": "2026-01-08T10:00:00Z",
+      "updatedAt": "2026-01-08T10:00:00Z",
+      "reminders": [
+        {
+          "type": "notification",
+          "minutesBefore": 15
+        }
+      ]
+    },
+    {
+      "id": "event_67805f5c1b2b2",
+      "userId": "user_example_12345",
+      "title": "Monthly Team Meeting",
+      "description": "Monthly sync with the entire team",
+      "type": "meeting",
+      "startDate": "2026-01-12",
+      "startTime": "10:00",
+      "endDate": "2026-01-12",
+      "endTime": "11:30",
+      "duration": 90,
+      "location": "Conference Room A",
+      "attendees": [
+        {
+          "name": "Team Lead",
+          "email": "lead@example.com",
+          "status": "accepted"
+        }
+      ],
+      "platform": "in_person",
+      "platformLink": null,
+      "status": "scheduled",
+      "isRecurring": false,
+      "recurringPattern": null,
+      "notes": "Bring Q1 roadmap updates",
+      "hasNotes": true,
+      "actionItems": ["task_67805f5c1a5e7"],
+      "createdAt": "2026-01-07T14:00:00Z",
+      "updatedAt": "2026-01-07T14:00:00Z",
+      "reminders": [
+        {
+          "type": "email",
+          "minutesBefore": 60
+        }
+      ]
+    },
+    {
+      "id": "event_67805f5c1b3c3",
+      "userId": "user_example_12345",
+      "title": "Gym Workout",
+      "description": "Strength training session",
+      "type": "personal",
+      "startDate": "2026-01-15",
+      "startTime": "18:30",
+      "endDate": "2026-01-15",
+      "endTime": "19:30",
+      "duration": 60,
+      "location": "Local Gym",
+      "attendees": [],
+      "platform": "none",
+      "platformLink": null,
+      "status": "scheduled",
+      "isRecurring": false,
+      "recurringPattern": null,
+      "notes": "Leg day",
+      "hasNotes": true,
+      "actionItems": [],
+      "createdAt": "2026-01-06T08:00:00Z",
+      "updatedAt": "2026-01-06T08:00:00Z",
+      "reminders": [
+        {
+          "type": "push",
+          "minutesBefore": 30
+        }
+      ]
+    }
+  ]
+}
