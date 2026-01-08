@@ -1,0 +1,33 @@
+# Sensitive configuration files
+config/google_oauth_config.php
+
+# User data
+data/users.json
+
+# Environment files
+.env
+.env.local
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+error_log
+
+# PHP
+vendor/
+composer.lock
+
+# Temporary files
+tmp/
+temp/
+*.tmp

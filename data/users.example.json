@@ -1,0 +1,18 @@
+{
+  "users": [
+    {
+      "id": "user_example_12345",
+      "google_id": "google_user_id_example",
+      "name": "Example User",
+      "email": "user@example.com",
+      "profile_picture": "https://example.com/photo.jpg",
+      "timezone": "UTC",
+      "created_at": "2026-01-08T10:00:00Z",
+      "last_login": "2026-01-08T10:00:00Z",
+      "preferences": {
+        "notifications_enabled": true,
+        "default_view": "month"
+      }
+    }
+  ]
+}
