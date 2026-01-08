@@ -68,28 +68,141 @@
         </nav>
 
         <!-- Main Content -->
-        <main class="dashboard-main">
-            <div class="container">
-                <div class="row">
-                    <div class="col-12">
-                        <div class="welcome-card">
-                            <h1 id="welcome-title" class="welcome-title">Welcome!</h1>
-                            <p id="welcome-message" class="welcome-message">
-                                Calendar features coming soon...
-                            </p>
-                            
-                            <div class="features-coming">
-                                <span class="feature-badge">📅 Smart Calendar</span>
-                                <span class="feature-badge">🤖 AI Scheduling</span>
-                                <span class="feature-badge">🔔 Smart Reminders</span>
-                                <span class="feature-badge">📊 Analytics</span>
-                                <span class="feature-badge">🔄 Integrations</span>
-                            </div>
+        <main class="dashboard-main p-0">
+            <div class="calendar-container">
+                <!-- Calendar Controls -->
+                <div class="calendar-controls px-4 pt-4">
+                    <div class="d-flex align-items-center gap-3">
+                        <button id="todayBtn" class="btn btn-outline-primary">Today</button>
+                        <div class="btn-group">
+                            <button id="prevMonth" class="btn btn-outline-secondary">
+                                <i class="bi bi-chevron-left"></i>
+                            </button>
+                            <button id="nextMonth" class="btn btn-outline-secondary">
+                                <i class="bi bi-chevron-right"></i>
+                            </button>
                         </div>
+                    </div>
+                    <div id="currentMonthYear" class="month-year">Month Year</div>
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="btn-group">
+                            <button class="btn btn-primary active">Month</button>
+                            <button class="btn btn-outline-secondary" disabled>Week</button>
+                            <button class="btn btn-outline-secondary" disabled>Day</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Calendar Grid -->
+                <div class="p-4">
+                    <div id="calendarGrid" class="calendar-grid">
+                        <!-- Calendar days will be injected here -->
                     </div>
                 </div>
             </div>
         </main>
+    </div>
+
+    <!-- Day Detail Modal -->
+    <div class="modal fade" id="dayModal" tabindex="-1" aria-labelledby="dayModalTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="dayModalTitle">Day, Month DD, YYYY</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="dayModalContent">
+                    <!-- Day content will be injected here -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" id="addTaskBtn" class="btn btn-outline-success">
+                        <i class="bi bi-plus-circle"></i> Task
+                    </button>
+                    <button type="button" id="addEventBtn" class="btn btn-outline-primary">
+                        <i class="bi bi-plus-circle"></i> Event
+                    </button>
+                    <button type="button" id="addFocusBtn" class="btn btn-outline-warning">
+                        <i class="bi bi-plus-circle"></i> Focus
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Task Modal (Placeholder) -->
+    <div class="modal fade" id="taskModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">New Task</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="taskForm">
+                        <div class="mb-3">
+                            <label class="form-label">Title</label>
+                            <input type="text" class="form-control" name="title" required>
+                        </div>
+                        <p class="text-muted small">More fields will be available in Task 6.</p>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary">Save Task</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Event Modal (Placeholder) -->
+    <div class="modal fade" id="eventModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">New Event</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="eventForm">
+                        <div class="mb-3">
+                            <label class="form-label">Title</label>
+                            <input type="text" class="form-control" name="title" required>
+                        </div>
+                        <p class="text-muted small">More fields will be available in Task 8.</p>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary">Save Event</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TimeBlock Modal (Placeholder) -->
+    <div class="modal fade" id="timeBlockModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">New Focus Time</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="timeBlockForm">
+                        <div class="mb-3">
+                            <label class="form-label">Title</label>
+                            <input type="text" class="form-control" name="title" required>
+                        </div>
+                        <p class="text-muted small">More fields will be available in Task 10.</p>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary">Save Focus Time</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Bootstrap JS Bundle -->
@@ -98,60 +211,33 @@
     <!-- Auth Module -->
     <script src="/js/auth.js"></script>
     
+    <!-- Calendar Module -->
+    <script src="/js/calendar.js"></script>
+    
     <!-- Dashboard Script -->
     <script>
+        // Use the updateUserInterface function from before, but it's now simplified
         document.addEventListener('DOMContentLoaded', async () => {
             try {
-                // Check session
                 const user = await Auth.checkSession();
-
-                if (!user) {
-                    // Not authenticated, redirect to login
-                    window.location.href = '/index.html';
-                    return;
+                if (user) {
+                    updateUserInterface(user);
+                    document.getElementById('loading-spinner').style.display = 'none';
+                    document.getElementById('dashboard-content').style.display = 'block';
                 }
-
-                // User is authenticated, update UI with user data
-                updateUserInterface(user);
-
-                // Hide loading spinner and show dashboard
-                document.getElementById('loading-spinner').style.display = 'none';
-                document.getElementById('dashboard-content').style.display = 'block';
-
-                console.log('User authenticated:', user.name);
             } catch (error) {
-                console.error('Error loading dashboard:', error);
-                Auth.showToast('Error loading dashboard. Please try again.', 'error');
-                
-                // Redirect to login on error
-                setTimeout(() => {
-                    window.location.href = '/index.html';
-                }, 2000);
+                console.error('Error updating UI:', error);
             }
         });
 
-        /**
-         * Update the dashboard UI with user data
-         * @param {Object} user - User object from session
-         */
         function updateUserInterface(user) {
-            // Update user picture
             const userPicture = document.getElementById('user-picture');
             if (user.profile_picture) {
                 userPicture.src = user.profile_picture;
             }
-
-            // Update user name
             document.getElementById('user-name').textContent = user.name || 'User';
             document.getElementById('dropdown-name').textContent = user.name || 'User';
-
-            // Update user email
             document.getElementById('dropdown-email').textContent = user.email || '';
-
-            // Update welcome message
-            document.getElementById('welcome-title').textContent = `Welcome, ${user.name || 'User'}!`;
-            document.getElementById('welcome-message').textContent = 
-                `You're all set up, ${user.name?.split(' ')[0] || 'User'}! Calendar features are coming soon. Stay tuned!`;
         }
     </script>
 </body>
