@@ -1,0 +1,40 @@
+{
+  "timeBlocks": [
+    {
+      "id": "timeblock_67805f5c1c1a1",
+      "userId": "user_example_12345",
+      "title": "Morning Focus Time",
+      "type": "focus",
+      "startDate": "2026-01-09",
+      "startTime": "09:00",
+      "endDate": "2026-01-09",
+      "endTime": "10:30",
+      "duration": 90,
+      "color": "#4CAF50",
+      "isRecurring": true,
+      "recurringDays": ["monday", "wednesday", "friday"],
+      "description": "Deep work session for coding and problem-solving",
+      "status": "active",
+      "createdAt": "2026-01-08T10:00:00Z",
+      "updatedAt": "2026-01-08T10:00:00Z"
+    },
+    {
+      "id": "timeblock_67805f5c1c2b2",
+      "userId": "user_example_12345",
+      "title": "Lunch Break",
+      "type": "lunch",
+      "startDate": "2026-01-09",
+      "startTime": "12:30",
+      "endDate": "2026-01-09",
+      "endTime": "13:30",
+      "duration": 60,
+      "color": "#FFC107",
+      "isRecurring": true,
+      "recurringDays": ["monday", "tuesday", "wednesday", "thursday", "friday"],
+      "description": "Daily lunch break",
+      "status": "active",
+      "createdAt": "2026-01-08T10:00:00Z",
+      "updatedAt": "2026-01-08T10:00:00Z"
+    }
+  ]
+}
