@@ -8,7 +8,8 @@ let allEvents = [];
 let allTasks = [];
 let allTimeBlocks = [];
 
-let dayModal, taskModal, eventModal, timeBlockModal;
+let dayModal, eventModal, timeBlockModal;
+let currentDayModalDateISO = null;
 
 /**
  * Load all tasks, events, and timeblocks from the backend
@@ -30,14 +31,9 @@ async function loadAllData() {
         if (tasksData.success) allTasks = tasksData.data || [];
         if (eventsData.success) allEvents = eventsData.data || [];
         if (timeBlocksData.success) allTimeBlocks = timeBlocksData.data || [];
-
     } catch (error) {
         console.error('Error loading calendar data:', error);
     }
-}
-
-function getCurrentDate() {
-    return new Date(currentYear, currentMonth, 1);
 }
 
 function getDaysInMonth(year, month) {
@@ -54,20 +50,17 @@ function getFirstDayOfMonth(year, month) {
 function renderCalendar() {
     const calendarGrid = document.getElementById('calendarGrid');
     const monthYearDisplay = document.getElementById('currentMonthYear');
-    
+
     if (!calendarGrid || !monthYearDisplay) return;
 
-    // Clear grid
     calendarGrid.innerHTML = '';
 
-    // Set Month Year text
     const date = new Date(currentYear, currentMonth);
     const monthName = date.toLocaleString('default', { month: 'long' });
     monthYearDisplay.textContent = `${monthName} ${currentYear}`;
 
-    // Add day headers
     const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    days.forEach(day => {
+    days.forEach((day) => {
         const header = document.createElement('div');
         header.className = 'calendar-header';
         header.textContent = day;
@@ -78,20 +71,17 @@ function renderCalendar() {
     const daysInMonth = getDaysInMonth(currentYear, currentMonth);
     const daysInPrevMonth = getDaysInMonth(currentYear, currentMonth - 1);
 
-    // Previous month's days
     for (let i = firstDay - 1; i >= 0; i--) {
         const dayNum = daysInPrevMonth - i;
         const prevMonthDate = new Date(currentYear, currentMonth - 1, dayNum);
         calendarGrid.appendChild(renderDayCell(prevMonthDate, true));
     }
 
-    // Current month's days
     for (let i = 1; i <= daysInMonth; i++) {
         const currentDate = new Date(currentYear, currentMonth, i);
         calendarGrid.appendChild(renderDayCell(currentDate, false));
     }
 
-    // Next month's days to fill the grid (6 rows * 7 days = 42 cells total)
     const totalCellsSoFar = firstDay + daysInMonth;
     const remainingCells = 42 - totalCellsSoFar;
     for (let i = 1; i <= remainingCells; i++) {
@@ -107,11 +97,13 @@ function renderDayCell(date, isOtherMonth) {
     const dayCell = document.createElement('div');
     dayCell.className = 'calendar-day';
     if (isOtherMonth) dayCell.classList.add('other-month');
-    
+
     const today = new Date();
-    if (date.getDate() === today.getDate() && 
-        date.getMonth() === today.getMonth() && 
-        date.getFullYear() === today.getFullYear()) {
+    if (
+        date.getDate() === today.getDate() &&
+        date.getMonth() === today.getMonth() &&
+        date.getFullYear() === today.getFullYear()
+    ) {
         dayCell.classList.add('today');
     }
 
@@ -122,26 +114,25 @@ function renderDayCell(date, isOtherMonth) {
 
     const itemsContainer = document.createElement('div');
     itemsContainer.className = 'day-items';
-    
+
     const events = getEventsForDate(date);
     const tasks = getTasksForDate(date);
     const timeBlocks = getTimeBlocksForDate(date);
 
     const allItems = [
-        ...events.map(e => ({ ...e, calendarType: 'event' })),
-        ...tasks.map(t => ({ ...t, calendarType: 'task' })),
-        ...timeBlocks.map(tb => ({ ...tb, calendarType: 'focus' }))
+        ...events.map((e) => ({ ...e, calendarType: 'event' })),
+        ...tasks.map((t) => ({ ...t, calendarType: 'task' })),
+        ...timeBlocks.map((tb) => ({ ...tb, calendarType: 'focus' }))
     ];
 
-    // Limit to 3-4 items
     const displayItems = allItems.slice(0, 3);
-    displayItems.forEach(item => {
+    displayItems.forEach((item) => {
         const itemEl = document.createElement('div');
         itemEl.className = `day-item ${item.calendarType}`;
-        
+
         let prefix = `[${item.calendarType}]`;
         if (item.calendarType === 'event') prefix = '[meeting]';
-        
+
         itemEl.textContent = `${prefix} ${item.title}`;
         itemsContainer.appendChild(itemEl);
     });
@@ -155,7 +146,6 @@ function renderDayCell(date, isOtherMonth) {
 
     dayCell.appendChild(itemsContainer);
 
-    // Click handler
     dayCell.onclick = () => openDayModal(date);
 
     return dayCell;
@@ -163,17 +153,17 @@ function renderDayCell(date, isOtherMonth) {
 
 function getEventsForDate(date) {
     const dateStr = formatDateToISO(date);
-    return allEvents.filter(event => event.startDate === dateStr);
+    return allEvents.filter((event) => event.startDate === dateStr);
 }
 
 function getTasksForDate(date) {
     const dateStr = formatDateToISO(date);
-    return allTasks.filter(task => task.dueDate === dateStr);
+    return allTasks.filter((task) => task.dueDate === dateStr);
 }
 
 function getTimeBlocksForDate(date) {
     const dateStr = formatDateToISO(date);
-    return allTimeBlocks.filter(tb => tb.startDate === dateStr);
+    return allTimeBlocks.filter((tb) => tb.startDate === dateStr);
 }
 
 function formatDateToISO(date) {
@@ -208,6 +198,10 @@ function goToToday() {
     renderCalendar();
 }
 
+function closeDayModal() {
+    dayModal?.hide();
+}
+
 /**
  * Open day detail modal
  */
@@ -224,124 +218,135 @@ function openDayModal(date) {
     });
 
     document.getElementById('dayModalTitle').textContent = dateStr;
-    
-    const container = document.getElementById('dayModalContent');
-    container.innerHTML = '';
 
-    // Events Section
-    if (events.length > 0) {
-        const header = document.createElement('h6');
-        header.className = 'mt-3 mb-2';
-        header.textContent = 'Events & Meetings';
-        container.appendChild(header);
-        
-        events.forEach(event => {
-            const item = document.createElement('div');
-            item.className = 'day-modal-item';
-            item.innerHTML = `
-                <div>
-                    <div class="day-modal-item-title">${sanitize(event.title)}</div>
-                    <div class="day-modal-item-time">${event.startTime} - ${event.endTime}</div>
-                </div>
-                <div class="day-modal-item-actions">
-                    <button class="btn btn-sm btn-outline-primary" onclick="editEvent('${event.id}')">Edit</button>
-                    <button class="btn btn-sm btn-outline-danger" onclick="deleteEvent('${event.id}')">Delete</button>
-                </div>
-            `;
-            container.appendChild(item);
-        });
+    currentDayModalDateISO = formatDateToISO(date);
+    window.selectedDate = currentDayModalDateISO;
+
+    const eventsSection = document.getElementById('eventsSection');
+    const tasksSection = document.getElementById('tasksSection');
+    const timeBlocksSection = document.getElementById('timeBlocksSection');
+
+    if (eventsSection) {
+        const eventsHtml = events
+            .map((event) => {
+                return `
+          <div class="day-modal-item">
+            <div>
+              <div class="day-modal-item-title">${sanitize(event.title)}</div>
+              <div class="day-modal-item-meta">${sanitize(event.startTime)} - ${sanitize(event.endTime)}</div>
+            </div>
+            <div class="day-modal-item-actions">
+              <button class="btn btn-sm btn-outline-primary" onclick="editEvent('${event.id}')">Edit</button>
+              <button class="btn btn-sm btn-outline-danger" onclick="deleteEvent('${event.id}')">Delete</button>
+            </div>
+          </div>
+        `;
+            })
+            .join('');
+
+        eventsSection.innerHTML = `
+        <h6 class="mt-1 mb-2">Events & Meetings</h6>
+        ${eventsHtml || '<p class="text-muted">No events</p>'}
+      `;
     }
 
-    // Tasks Section
-    if (tasks.length > 0) {
-        const header = document.createElement('h6');
-        header.className = 'mt-3 mb-2';
-        header.textContent = 'Tasks';
-        container.appendChild(header);
-        
-        tasks.forEach(task => {
-            const item = document.createElement('div');
-            item.className = 'day-modal-item';
-            const priorityClass = `task-${task.priority || 'medium'}`;
-            item.innerHTML = `
-                <div>
-                    <div class="day-modal-item-title ${priorityClass}">${sanitize(task.title)}</div>
-                    <div class="day-modal-item-time">Due: ${task.dueTime || 'All day'} | Priority: ${task.priority || 'Medium'}</div>
-                    <span class="badge bg-secondary">${task.status || 'pending'}</span>
-                </div>
-                <div class="day-modal-item-actions">
-                    <button class="btn btn-sm btn-outline-primary" onclick="editTask('${task.id}')">Edit</button>
-                    <button class="btn btn-sm btn-outline-danger" onclick="deleteTask('${task.id}')">Delete</button>
-                </div>
-            `;
-            container.appendChild(item);
-        });
+    if (tasksSection) {
+        const tasksHtml = tasks
+            .map((task) => {
+                const priorityClass = `task-${task.priority || 'medium'}`;
+                const statusBadge = `<span class="badge bg-info">${sanitize(task.status || 'pending')}</span>`;
+                const time = task.dueTime ? ` ${sanitize(task.dueTime)}` : '';
+
+                return `
+          <div class="day-modal-item">
+            <div>
+              <div class="day-modal-item-title ${priorityClass}">${sanitize(task.title)}</div>
+              <div class="day-modal-item-meta">${statusBadge}${time}</div>
+            </div>
+            <div class="day-modal-item-actions">
+              <button class="btn btn-sm btn-outline-success" onclick="completeTask('${task.id}')">Complete</button>
+              <button class="btn btn-sm btn-outline-primary" onclick="closeDayModal(); openEditTaskModal('${task.id}')">Edit</button>
+              <button class="btn btn-sm btn-outline-danger" onclick="deleteTaskQuick('${task.id}')">Delete</button>
+            </div>
+          </div>
+        `;
+            })
+            .join('');
+
+        tasksSection.innerHTML = `
+        <h6 class="mt-1 mb-2">Tasks</h6>
+        ${tasksHtml || '<p class="text-muted">No tasks</p>'}
+      `;
     }
 
-    // Time Blocks Section
-    if (timeBlocks.length > 0) {
-        const header = document.createElement('h6');
-        header.className = 'mt-3 mb-2';
-        header.textContent = 'Focus & Time Blocks';
-        container.appendChild(header);
-        
-        timeBlocks.forEach(tb => {
-            const item = document.createElement('div');
-            item.className = 'day-modal-item';
-            item.innerHTML = `
-                <div>
-                    <div class="day-modal-item-title event-focus">${sanitize(tb.title)}</div>
-                    <div class="day-modal-item-time">${tb.startTime} - ${tb.endTime} (${tb.type})</div>
-                </div>
-                <div class="day-modal-item-actions">
-                    <button class="btn btn-sm btn-outline-primary" onclick="editTimeBlock('${tb.id}')">Edit</button>
-                    <button class="btn btn-sm btn-outline-danger" onclick="deleteTimeBlock('${tb.id}')">Delete</button>
-                </div>
-            `;
-            container.appendChild(item);
-        });
+    if (timeBlocksSection) {
+        const timeBlocksHtml = timeBlocks
+            .map((tb) => {
+                return `
+          <div class="day-modal-item">
+            <div>
+              <div class="day-modal-item-title event-focus">${sanitize(tb.title)}</div>
+              <div class="day-modal-item-meta">${sanitize(tb.startTime)} - ${sanitize(tb.endTime)} (${sanitize(tb.type)})</div>
+            </div>
+            <div class="day-modal-item-actions">
+              <button class="btn btn-sm btn-outline-primary" onclick="editTimeBlock('${tb.id}')">Edit</button>
+              <button class="btn btn-sm btn-outline-danger" onclick="deleteTimeBlock('${tb.id}')">Delete</button>
+            </div>
+          </div>
+        `;
+            })
+            .join('');
+
+        timeBlocksSection.innerHTML = `
+        <h6 class="mt-1 mb-2">Focus & Time Blocks</h6>
+        ${timeBlocksHtml || '<p class="text-muted">No time blocks</p>'}
+      `;
     }
 
-    if (events.length === 0 && tasks.length === 0 && timeBlocks.length === 0) {
-        container.innerHTML = '<p class="text-muted text-center my-4">No items scheduled for this day.</p>';
-    }
-
-    // Store selected date for the "Add" buttons
-    window.selectedDate = formatDateToISO(date);
-
-    dayModal.show();
+    dayModal?.show();
 }
 
-function openTaskModal() {
-    // Will be implemented in Task 6
-    taskModal.show();
-}
+async function deleteTaskQuick(taskId) {
+    if (!confirm('Delete this task?')) return;
 
-function openEventModal() {
-    // Will be implemented in Task 8
-    eventModal.show();
-}
+    try {
+        const response = await fetch('/php/tasks.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Accept': 'application/json'
+            },
+            body: `action=delete&taskId=${encodeURIComponent(taskId)}`,
+            cache: 'no-store'
+        });
 
-function openTimeBlockModal() {
-    // Will be implemented in Task 10
-    timeBlockModal.show();
+        const result = await response.json();
+        if (result.success) {
+            await loadAllData();
+            renderCalendar();
+            closeDayModal();
+            showNotification('Task deleted', 'success');
+        } else {
+            alert('Error: ' + (result.error || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
 }
 
 function sanitize(str) {
     const div = document.createElement('div');
-    div.textContent = str;
+    div.textContent = str ?? '';
     return div.innerHTML;
 }
 
 // Global functions for edit/delete buttons (placeholders)
 window.editEvent = (id) => console.log('Edit event', id);
 window.deleteEvent = (id) => console.log('Delete event', id);
-window.editTask = (id) => console.log('Edit task', id);
-window.deleteTask = (id) => console.log('Delete task', id);
 window.editTimeBlock = (id) => console.log('Edit timeblock', id);
 window.deleteTimeBlock = (id) => console.log('Delete timeblock', id);
 
-document.addEventListener('DOMContentLoaded', async function() {
+document.addEventListener('DOMContentLoaded', async function () {
     try {
         const user = await Auth.checkSession();
         if (!user) {
@@ -349,37 +354,45 @@ document.addEventListener('DOMContentLoaded', async function() {
             return;
         }
 
-        // Load all data
         await loadAllData();
 
-        // Initialize modals
         dayModal = new bootstrap.Modal(document.getElementById('dayModal'));
-        taskModal = new bootstrap.Modal(document.getElementById('taskModal'));
+
+        // Task modal (Task 6)
+        initializeTaskModal();
+
+        // Placeholder modals
         eventModal = new bootstrap.Modal(document.getElementById('eventModal'));
         timeBlockModal = new bootstrap.Modal(document.getElementById('timeBlockModal'));
 
-        // Render calendar
         renderCalendar();
 
-        // Attach event listeners
         document.getElementById('prevMonth').addEventListener('click', previousMonth);
         document.getElementById('nextMonth').addEventListener('click', nextMonth);
         document.getElementById('todayBtn').addEventListener('click', goToToday);
-        
-        // Add buttons in day modal
-        document.getElementById('addEventBtn').addEventListener('click', () => {
-            dayModal.hide();
-            openEventModal();
-        });
-        document.getElementById('addTaskBtn').addEventListener('click', () => {
-            dayModal.hide();
-            openTaskModal();
-        });
-        document.getElementById('addFocusBtn').addEventListener('click', () => {
-            dayModal.hide();
-            openTimeBlockModal();
-        });
 
+        const taskSaveBtn = document.getElementById('taskSaveBtn');
+        if (taskSaveBtn) taskSaveBtn.addEventListener('click', saveTask);
+
+        const taskDeleteBtn = document.getElementById('taskDeleteBtn');
+        if (taskDeleteBtn) taskDeleteBtn.addEventListener('click', deleteTask);
+
+        const addTaskBtn = document.getElementById('addTaskBtn');
+        if (addTaskBtn) {
+            addTaskBtn.addEventListener('click', function () {
+                const selectedDate = currentDayModalDateISO || window.selectedDate || null;
+                closeDayModal();
+                setTimeout(() => openNewTaskModal(selectedDate), 300);
+            });
+        }
+
+        const addEventBtn = document.getElementById('addEventBtn');
+        if (addEventBtn) {
+            addEventBtn.addEventListener('click', () => {
+                closeDayModal();
+                eventModal?.show();
+            });
+        }
     } catch (error) {
         console.error('Initialization error:', error);
     }

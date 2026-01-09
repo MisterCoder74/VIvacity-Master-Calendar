@@ -542,9 +542,19 @@ a:hover {
 .event-meeting { color: #0066cc; }
 .event-focus { color: #ff6600; }
 .event-personal { color: #00cc00; }
-.task-high { color: #dc3545; font-weight: 700; }
-.task-medium { color: #fd7e14; }
-.task-low { color: #198754; }
+
+.task-high {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+.task-medium {
+    color: #fd7e14;
+}
+
+.task-low {
+    color: #28a745;
+}
 
 /* Modal Styles */
 .day-modal-item {
@@ -575,9 +585,20 @@ a:hover {
     color: #6c757d;
 }
 
+.day-modal-item-meta {
+    font-size: 0.85rem;
+    color: #666;
+    margin-top: 0.25rem;
+}
+
 .day-modal-item-actions {
     display: flex;
-    gap: 0.5rem;
+    gap: 0.25rem;
+}
+
+.day-modal-item-actions button {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
 }
 
 /* Responsive Design Overrides */

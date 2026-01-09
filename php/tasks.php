@@ -97,6 +97,11 @@ try {
     case 'update':
       // Update existing task
       $data = json_decode(file_get_contents('php://input'), true);
+      if (!is_array($data)) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'error' => 'Invalid JSON payload']);
+        exit;
+      }
       $taskId = $data['taskId'] ?? null;
       
       if (!$taskId) {
@@ -121,19 +126,24 @@ try {
         exit;
       }
       
-      // Prepare task data with sanitization
-      $taskData = [
-        'title' => sanitizeInput($data['title']),
-        'description' => sanitizeInput($data['description'] ?? ''),
-        'dueDate' => $data['dueDate'] ?? null,
-        'dueTime' => $data['dueTime'] ?? null,
-        'priority' => $data['priority'] ?? 'medium',
-        'status' => $data['status'] ?? 'pending',
-        'category' => $data['category'] ?? 'other',
-        'tags' => is_array($data['tags'] ?? []) ? $data['tags'] : [],
-        'relatedEventId' => $data['relatedEventId'] ?? null,
-        'notes' => sanitizeInput($data['notes'] ?? '')
-      ];
+      // Prepare task data with sanitization (partial updates supported)
+      $taskData = [];
+
+      foreach (['title', 'description', 'notes'] as $field) {
+        if (array_key_exists($field, $data)) {
+          $taskData[$field] = sanitizeInput($data[$field]);
+        }
+      }
+
+      foreach (['dueDate', 'dueTime', 'priority', 'status', 'category', 'relatedEventId'] as $field) {
+        if (array_key_exists($field, $data)) {
+          $taskData[$field] = $data[$field];
+        }
+      }
+
+      if (array_key_exists('tags', $data)) {
+        $taskData['tags'] = is_array($data['tags']) ? $data['tags'] : [];
+      }
       
       $result = updateTask($taskId, $userId, $taskData);
       http_response_code($result['success'] ? 200 : 500);

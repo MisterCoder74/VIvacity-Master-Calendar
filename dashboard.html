@@ -112,17 +112,16 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body" id="dayModalContent">
-                    <!-- Day content will be injected here -->
+                    <div id="eventsSection"></div>
+                    <div id="tasksSection" class="mt-3"></div>
+                    <div id="timeBlocksSection" class="mt-3"></div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" id="addTaskBtn" class="btn btn-outline-success">
-                        <i class="bi bi-plus-circle"></i> Task
+                    <button type="button" class="btn btn-success" id="addTaskBtn">
+                        <i class="bi bi-plus"></i> Add Task
                     </button>
-                    <button type="button" id="addEventBtn" class="btn btn-outline-primary">
-                        <i class="bi bi-plus-circle"></i> Event
-                    </button>
-                    <button type="button" id="addFocusBtn" class="btn btn-outline-warning">
-                        <i class="bi bi-plus-circle"></i> Focus
+                    <button type="button" class="btn btn-success" id="addEventBtn" style="display:none;">
+                        <i class="bi bi-plus"></i> Add Event
                     </button>
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 </div>
@@ -130,29 +129,100 @@
         </div>
     </div>
 
-    <!-- Task Modal (Placeholder) -->
-    <div class="modal fade" id="taskModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">New Task</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    <div class="modal fade" id="taskModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="taskModalTitle">New Task</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <form id="taskForm">
+              <div class="mb-3">
+                <label for="taskTitle" class="form-label">Task Title *</label>
+                <input type="text" class="form-control" id="taskTitle" name="title" required maxlength="255">
+                <small class="form-text text-muted">Max 255 characters</small>
+              </div>
+
+              <div class="mb-3">
+                <label for="taskDescription" class="form-label">Description</label>
+                <textarea class="form-control" id="taskDescription" name="description" rows="3"></textarea>
+              </div>
+
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <label for="taskDueDate" class="form-label">Due Date</label>
+                    <input type="date" class="form-control" id="taskDueDate" name="dueDate">
+                  </div>
                 </div>
-                <div class="modal-body">
-                    <form id="taskForm">
-                        <div class="mb-3">
-                            <label class="form-label">Title</label>
-                            <input type="text" class="form-control" name="title" required>
-                        </div>
-                        <p class="text-muted small">More fields will be available in Task 6.</p>
-                    </form>
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <label for="taskDueTime" class="form-label">Due Time</label>
+                    <input type="time" class="form-control" id="taskDueTime" name="dueTime">
+                  </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary">Save Task</button>
+              </div>
+
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <label for="taskPriority" class="form-label">Priority</label>
+                    <select class="form-select" id="taskPriority" name="priority">
+                      <option value="low">Low</option>
+                      <option value="medium" selected>Medium</option>
+                      <option value="high">High</option>
+                    </select>
+                  </div>
                 </div>
-            </div>
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <label for="taskStatus" class="form-label">Status</label>
+                    <select class="form-select" id="taskStatus" name="status">
+                      <option value="pending" selected>Pending</option>
+                      <option value="in_progress">In Progress</option>
+                      <option value="completed">Completed</option>
+                      <option value="cancelled">Cancelled</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <label for="taskCategory" class="form-label">Category</label>
+                    <select class="form-select" id="taskCategory" name="category">
+                      <option value="other" selected>Other</option>
+                      <option value="work">Work</option>
+                      <option value="personal">Personal</option>
+                      <option value="health">Health</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="mb-3">
+                    <label for="taskTags" class="form-label">Tags</label>
+                    <input type="text" class="form-control" id="taskTags" name="tags" placeholder="comma separated">
+                  </div>
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label for="taskNotes" class="form-label">Notes</label>
+                <textarea class="form-control" id="taskNotes" name="notes" rows="2"></textarea>
+              </div>
+
+              <input type="hidden" id="taskId" name="taskId">
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-danger" id="taskDeleteBtn" style="display:none;">Delete</button>
+            <button type="button" class="btn btn-primary" id="taskSaveBtn">Save Task</button>
+          </div>
         </div>
+      </div>
     </div>
 
     <!-- Event Modal (Placeholder) -->
@@ -210,6 +280,9 @@
     
     <!-- Auth Module -->
     <script src="/js/auth.js"></script>
+
+    <!-- Tasks Module -->
+    <script src="/js/tasks.js"></script>
     
     <!-- Calendar Module -->
     <script src="/js/calendar.js"></script>
