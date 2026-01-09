@@ -650,3 +650,196 @@ a:hover {
 .no-js .google-signin-container {
     display: none;
 }
+
+/* Real-Time Sync Enhancements (Task 9) */
+
+/* Calendar Item Indicators */
+.day-item {
+    font-size: 0.75rem;
+    padding: 2px 4px;
+    margin: 1px 0;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    line-height: 1.2;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.day-item:hover {
+    transform: scale(1.05);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Task Priority Indicators */
+.task-indicator.high {
+    background-color: #dc3545;
+    color: white;
+}
+
+.task-indicator.medium {
+    background-color: #ffc107;
+    color: #212529;
+}
+
+.task-indicator.low {
+    background-color: #28a745;
+    color: white;
+}
+
+/* Event Type Indicators */
+.event-indicator {
+    background-color: #007bff;
+    color: white;
+}
+
+/* Focus Time Indicators */
+.focus-indicator {
+    background-color: #6f42c1;
+    color: white;
+}
+
+/* More Items Link */
+.more-items {
+    font-size: 0.7rem;
+    color: #6c757d;
+    font-style: italic;
+    cursor: pointer;
+    padding: 2px 4px;
+}
+
+.more-items:hover {
+    color: #495057;
+    text-decoration: underline;
+}
+
+/* Toast Notifications */
+.toast-container {
+    z-index: 9999;
+}
+
+.toast {
+    animation: slideInRight 0.3s ease;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Sync Loading Indicators */
+.sync-loading {
+    position: relative;
+}
+
+.sync-loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Enhanced Calendar Day Cells */
+.calendar-day {
+    position: relative;
+    min-height: 80px;
+    border: 1px solid #e9ecef;
+    background: white;
+    transition: all 0.2s ease;
+}
+
+.calendar-day:hover {
+    background-color: #f8f9fa;
+    border-color: #007bff;
+}
+
+.calendar-day.today {
+    background-color: #e3f2fd;
+    border-color: #2196f3;
+}
+
+.calendar-day.other-month {
+    background-color: #f8f9fa;
+    color: #6c757d;
+}
+
+.calendar-day.today .day-number {
+    color: #1976d2;
+    font-weight: bold;
+}
+
+/* Enhanced Day Items Container */
+.day-items {
+    padding: 4px;
+    max-height: 60px;
+    overflow: hidden;
+}
+
+/* Mobile Responsive Enhancements */
+@media (max-width: 768px) {
+    .day-item {
+        font-size: 0.7rem;
+        padding: 1px 3px;
+    }
+    
+    .calendar-day {
+        min-height: 60px;
+    }
+    
+    .day-items {
+        max-height: 45px;
+    }
+    
+    .more-items {
+        font-size: 0.65rem;
+    }
+}
+
+/* Animation for smooth transitions */
+.fade-in {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Error states */
+.sync-error {
+    background-color: #f8d7da;
+    border-color: #f5c6cb;
+    color: #721c24;
+}
+
+/* Success states */
+.sync-success {
+    background-color: #d1edff;
+    border-color: #b3d7ff;
+    color: #0c5460;
+}

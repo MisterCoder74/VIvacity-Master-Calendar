@@ -91,7 +91,7 @@ function renderCalendar() {
 }
 
 /**
- * Create HTML for a single day cell
+ * Create HTML for a single day cell (enhanced for Task 9)
  */
 function renderDayCell(date, isOtherMonth) {
     const dayCell = document.createElement('div');
@@ -120,20 +120,60 @@ function renderDayCell(date, isOtherMonth) {
     const timeBlocks = getTimeBlocksForDate(date);
 
     const allItems = [
-        ...events.map((e) => ({ ...e, calendarType: 'event' })),
-        ...tasks.map((t) => ({ ...t, calendarType: 'task' })),
-        ...timeBlocks.map((tb) => ({ ...tb, calendarType: 'focus' }))
+        ...events.map((e) => ({ ...e, calendarType: 'event', type: 'event' })),
+        ...tasks.map((t) => ({ ...t, calendarType: 'task', type: 'task' })),
+        ...timeBlocks.map((tb) => ({ ...tb, calendarType: 'focus', type: 'focus' }))
     ];
 
     const displayItems = allItems.slice(0, 3);
     displayItems.forEach((item) => {
         const itemEl = document.createElement('div');
         itemEl.className = `day-item ${item.calendarType}`;
+        itemEl.setAttribute('data-item-id', item.id);
+        itemEl.setAttribute('data-item-type', item.type);
 
-        let prefix = `[${item.calendarType}]`;
-        if (item.calendarType === 'event') prefix = '[meeting]';
+        // Enhanced display with icons and better formatting
+        let prefix = '';
+        let className = '';
+        
+        if (item.type === 'event') {
+            className = 'event-indicator';
+            if (item.type === 'meeting') {
+                prefix = '📅 ';
+            } else {
+                prefix = '🗓️ ';
+            }
+        } else if (item.type === 'task') {
+            className = 'task-indicator';
+            const priority = item.priority || 'medium';
+            if (priority === 'high') {
+                prefix = '🔴 ';
+            } else if (priority === 'medium') {
+                prefix = '🟡 ';
+            } else {
+                prefix = '🟢 ';
+            }
+        } else if (item.type === 'focus') {
+            className = 'focus-indicator';
+            prefix = '⏰ ';
+        }
 
-        itemEl.textContent = `${prefix} ${item.title}`;
+        // Truncate title if too long
+        const title = item.title.length > 20 ? item.title.substring(0, 20) + '...' : item.title;
+        itemEl.textContent = `${prefix}${title}`;
+        itemEl.classList.add(className);
+        
+        // Add click handler to open specific item
+        itemEl.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (item.type === 'event') {
+                editEvent(item.id);
+            } else if (item.type === 'task') {
+                closeDayModal();
+                openEditTaskModal(item.id);
+            }
+        });
+
         itemsContainer.appendChild(itemEl);
     });
 
@@ -141,12 +181,24 @@ function renderDayCell(date, isOtherMonth) {
         const moreLink = document.createElement('div');
         moreLink.className = 'more-items';
         moreLink.textContent = `+${allItems.length - 3} more`;
+        moreLink.style.cursor = 'pointer';
+        moreLink.addEventListener('click', (e) => {
+            e.stopPropagation();
+            openDayModal(date);
+        });
         itemsContainer.appendChild(moreLink);
     }
 
     dayCell.appendChild(itemsContainer);
 
-    dayCell.onclick = () => openDayModal(date);
+    // Enhanced click handler with better event handling
+    dayCell.onclick = (e) => {
+        // If clicking on an item, don't open the day modal
+        if (e.target.classList.contains('day-item')) {
+            return;
+        }
+        openDayModal(date);
+    };
 
     return dayCell;
 }
@@ -322,10 +374,16 @@ async function deleteTaskQuick(taskId) {
 
         const result = await response.json();
         if (result.success) {
-            await loadAllData();
-            renderCalendar();
+            // Trigger sync system instead of direct refresh
+            if (window.Sync && typeof Sync.onDataChanged === 'function') {
+                Sync.onDataChanged('task', 'delete');
+            } else {
+                // Fallback to direct refresh if sync not available
+                await loadAllData();
+                renderCalendar();
+                showNotification('Task deleted', 'success');
+            }
             closeDayModal();
-            showNotification('Task deleted', 'success');
         } else {
             alert('Error: ' + (result.error || 'Unknown error'));
         }
@@ -340,9 +398,49 @@ function sanitize(str) {
     return div.innerHTML;
 }
 
-// Global functions for edit/delete buttons (placeholders)
-window.editEvent = (id) => console.log('Edit event', id);
-window.deleteEvent = (id) => console.log('Delete event', id);
+// Global functions for edit/delete buttons (enhanced for Task 9)
+window.editEvent = async (id) => {
+    try {
+        await openEditEventModal(id);
+    } catch (error) {
+        console.error('Error editing event:', error);
+        alert('Error loading event for editing');
+    }
+};
+
+window.deleteEvent = async (id) => {
+    if (!confirm('Delete this event?')) return;
+
+    try {
+        const response = await fetch('/php/events.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Accept': 'application/json'
+            },
+            body: `action=delete&eventId=${encodeURIComponent(id)}`,
+            cache: 'no-store'
+        });
+
+        const result = await response.json();
+        if (result.success) {
+            // Trigger sync system
+            if (window.Sync && typeof Sync.onDataChanged === 'function') {
+                Sync.onDataChanged('event', 'delete');
+            } else {
+                await loadAllData();
+                renderCalendar();
+            }
+            closeDayModal();
+            showNotification('Event deleted', 'success');
+        } else {
+            alert('Error: ' + (result.error || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
+};
+
 window.editTimeBlock = (id) => console.log('Edit timeblock', id);
 window.deleteTimeBlock = (id) => console.log('Delete timeblock', id);
 
@@ -393,6 +491,13 @@ document.addEventListener('DOMContentLoaded', async function () {
                 eventModal?.show();
             });
         }
+
+        // Initialize event modal if not already done
+        if (typeof initializeEventModal === 'function') {
+            initializeEventModal();
+        }
+
+        console.log('Calendar module initialized successfully');
     } catch (error) {
         console.error('Initialization error:', error);
     }
