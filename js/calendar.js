@@ -19,9 +19,9 @@ async function loadAllData() {
         // These endpoints will be fully implemented in subsequent tasks
         // For now, we fetch and handle potential 404s or empty responses
         const [tasksRes, eventsRes, timeBlocksRes] = await Promise.all([
-            fetch('/php/tasks.php?action=list', { cache: 'no-store' }).catch(() => ({ json: () => ({ success: false }) })),
-            fetch('/php/events.php?action=list', { cache: 'no-store' }).catch(() => ({ json: () => ({ success: false }) })),
-            fetch('/php/timeblocks.php?action=list', { cache: 'no-store' }).catch(() => ({ json: () => ({ success: false }) }))
+            fetch('php/tasks.php?action=list', { cache: 'no-store' }).catch(() => ({ json: () => ({ success: false }) })),
+            fetch('php/events.php?action=list', { cache: 'no-store' }).catch(() => ({ json: () => ({ success: false }) })),
+            fetch('php/timeblocks.php?action=list', { cache: 'no-store' }).catch(() => ({ json: () => ({ success: false }) }))
         ]);
 
         const tasksData = await tasksRes.json();
@@ -362,7 +362,7 @@ async function deleteTaskQuick(taskId) {
     if (!confirm('Delete this task?')) return;
 
     try {
-        const response = await fetch('/php/tasks.php', {
+        const response = await fetch('php/tasks.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
@@ -412,7 +412,7 @@ window.deleteEvent = async (id) => {
     if (!confirm('Delete this event?')) return;
 
     try {
-        const response = await fetch('/php/events.php', {
+        const response = await fetch('php/events.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
@@ -448,7 +448,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     try {
         const user = await Auth.checkSession();
         if (!user) {
-            window.location.href = '/index.html';
+            window.location.href = 'index.html';
             return;
         }
 

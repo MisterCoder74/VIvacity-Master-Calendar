@@ -45,5 +45,5 @@ if ($isAjax) {
 }
 
 // Redirect to index page for regular requests
-header('Location: /index.html');
+header('Location: ../index.html');
 exit;
