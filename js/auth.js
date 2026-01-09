@@ -10,7 +10,7 @@ const Auth = {
      */
     async checkSession() {
         try {
-            const response = await fetch('/php/auth.php', {
+            const response = await fetch('php/auth.php', {
                 method: 'GET',
                 cache: 'no-store',
                 credentials: 'same-origin'
@@ -98,7 +98,7 @@ const Auth = {
     async redirectToGoogleAuth() {
         try {
             // Fetch OAuth config from a PHP endpoint
-            const response = await fetch('/php/get_oauth_config.php');
+            const response = await fetch('php/get_oauth_config.php');
             
             if (!response.ok) {
                 throw new Error('Failed to get OAuth configuration');
@@ -139,7 +139,7 @@ const Auth = {
     async logout() {
         try {
             // Call backend logout endpoint
-            const response = await fetch('/php/logout.php', {
+            const response = await fetch('php/logout.php', {
                 method: 'POST',
                 credentials: 'same-origin'
             });
@@ -160,13 +160,13 @@ const Auth = {
             }
 
             // Redirect to login page
-            window.location.href = '/index.html';
+            window.location.href = 'index.html';
         } catch (error) {
             console.error('Error during logout:', error);
             // Even if there's an error, clear local storage and redirect
             localStorage.removeItem('vivacity_user');
             sessionStorage.clear();
-            window.location.href = '/index.html';
+            window.location.href = 'index.html';
         }
     },
 
@@ -180,7 +180,7 @@ const Auth = {
 
             if (user) {
                 // User is authenticated, redirect to dashboard
-                window.location.href = '/dashboard.html';
+                window.location.href = 'dashboard.html';
             } else {
                 // User is not authenticated, stay on login page
                 // Initialize Google Sign-In library
@@ -204,7 +204,7 @@ const Auth = {
                     clearInterval(checkGoogleReady);
 
                     // Fetch OAuth config to get client ID
-                    fetch('/php/get_oauth_config.php')
+                    fetch('php/get_oauth_config.php')
                         .then(response => response.json())
                         .then(config => {
                             // Initialize Google Sign-In

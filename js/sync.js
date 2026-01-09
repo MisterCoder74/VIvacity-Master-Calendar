@@ -193,7 +193,7 @@ const Sync = (() => {
      */
     async function syncTaskData() {
         try {
-            const response = await fetch('/php/tasks.php?action=list', {
+            const response = await fetch('php/tasks.php?action=list', {
                 cache: 'no-store'
             });
             const result = await response.json();
@@ -215,7 +215,7 @@ const Sync = (() => {
      */
     async function syncEventData() {
         try {
-            const response = await fetch('/php/events.php?action=list', {
+            const response = await fetch('php/events.php?action=list', {
                 cache: 'no-store'
             });
             const result = await response.json();

@@ -34,7 +34,7 @@ async function openEditEventModal(eventId) {
     currentEditingEventId = eventId;
 
     try {
-        const response = await fetch(`/php/events.php?action=get&eventId=${encodeURIComponent(eventId)}`, {
+        const response = await fetch(`php/events.php?action=get&eventId=${encodeURIComponent(eventId)}`, {
             cache: 'no-store'
         });
         const result = await response.json();
@@ -119,7 +119,7 @@ async function saveEvent() {
 
     try {
         const endpoint = eventId ? 'update' : 'create';
-        const response = await fetch(`/php/events.php?action=${endpoint}`, {
+        const response = await fetch(`php/events.php?action=${endpoint}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -167,7 +167,7 @@ async function deleteEvent() {
     }
 
     try {
-        const response = await fetch('/php/events.php', {
+        const response = await fetch('php/events.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',

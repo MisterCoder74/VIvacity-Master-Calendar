@@ -34,7 +34,7 @@ async function openEditTaskModal(taskId) {
     currentEditingTaskId = taskId;
 
     try {
-        const response = await fetch(`/php/tasks.php?action=get&taskId=${encodeURIComponent(taskId)}`, {
+        const response = await fetch(`php/tasks.php?action=get&taskId=${encodeURIComponent(taskId)}`, {
             cache: 'no-store'
         });
         const result = await response.json();
@@ -111,7 +111,7 @@ async function saveTask() {
 
     try {
         const endpoint = taskId ? 'update' : 'create';
-        const response = await fetch(`/php/tasks.php?action=${endpoint}`, {
+        const response = await fetch(`php/tasks.php?action=${endpoint}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -158,7 +158,7 @@ async function deleteTask() {
     }
 
     try {
-        const response = await fetch('/php/tasks.php', {
+        const response = await fetch('php/tasks.php', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
@@ -194,7 +194,7 @@ async function deleteTask() {
 
 async function completeTask(taskId) {
     try {
-        const response = await fetch('/php/tasks.php?action=update', {
+        const response = await fetch('php/tasks.php?action=update', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

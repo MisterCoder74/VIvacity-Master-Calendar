@@ -41,7 +41,7 @@ function handleError($message, $logMessage = null) {
     <div class='error'>
         <h2>Authentication Error</h2>
         <p>" . htmlspecialchars($message) . "</p>
-        <p><a href='/'>Return to login page</a></p>
+        <p><a href="../">Return to login page</a></p>
     </div>
 </body>
 </html>";
@@ -201,5 +201,5 @@ session_regenerate_id(true);
 logEvent("Session established for user: {$user['email']}", 'info');
 
 // Redirect to dashboard
-header('Location: /dashboard.html');
+header('Location: ../dashboard.html');
 exit;
