@@ -129,10 +129,16 @@ async function saveTask() {
         }
 
         taskModal?.hide();
-        await loadAllData();
-        renderCalendar();
-
-        showNotification(taskId ? 'Task updated' : 'Task created', 'success');
+        
+        // Trigger sync system instead of direct refresh
+        if (window.Sync && typeof Sync.onDataChanged === 'function') {
+            Sync.onDataChanged('task', taskId ? 'update' : 'create');
+        } else {
+            // Fallback to direct refresh if sync not available
+            await loadAllData();
+            renderCalendar();
+            showNotification(taskId ? 'Task updated' : 'Task created', 'success');
+        }
     } catch (error) {
         console.error('Error saving task:', error);
         alert('Error saving task');
@@ -170,10 +176,16 @@ async function deleteTask() {
         }
 
         taskModal?.hide();
-        await loadAllData();
-        renderCalendar();
-
-        showNotification('Task deleted', 'success');
+        
+        // Trigger sync system instead of direct refresh
+        if (window.Sync && typeof Sync.onDataChanged === 'function') {
+            Sync.onDataChanged('task', 'delete');
+        } else {
+            // Fallback to direct refresh if sync not available
+            await loadAllData();
+            renderCalendar();
+            showNotification('Task deleted', 'success');
+        }
     } catch (error) {
         console.error('Error deleting task:', error);
         alert('Error deleting task');
@@ -202,10 +214,15 @@ async function completeTask(taskId) {
             return;
         }
 
-        await loadAllData();
-        renderCalendar();
-
-        showNotification('Task marked as completed', 'success');
+        // Trigger sync system instead of direct refresh
+        if (window.Sync && typeof Sync.onDataChanged === 'function') {
+            Sync.onDataChanged('task', 'update');
+        } else {
+            // Fallback to direct refresh if sync not available
+            await loadAllData();
+            renderCalendar();
+            showNotification('Task marked as completed', 'success');
+        }
     } catch (error) {
         console.error('Error completing task:', error);
         alert('Error completing task');
