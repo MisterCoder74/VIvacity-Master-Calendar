@@ -794,7 +794,8 @@ function deleteEvent($eventId, $userId) {
 /**
  * List user events with optional filters.
  * Supported filters:
- * - status, type
+ * - type, status, platform
+ * - dateFrom, dateTo (aliases for startDateFrom, startDateTo)
  * - startDateFrom, startDateTo
  */
 function listUserEvents($userId, $filters = []) {
@@ -805,18 +806,23 @@ function listUserEvents($userId, $filters = []) {
 
     $events = $eventsResp['data'];
 
-    foreach (['status', 'type'] as $field) {
+    // Support single field filters
+    foreach (['status', 'type', 'platform'] as $field) {
         if (!empty($filters[$field])) {
             $events = array_values(array_filter($events, fn($e) => ($e[$field] ?? null) === $filters[$field]));
         }
     }
 
-    if (!empty($filters['startDateFrom'])) {
-        $events = array_values(array_filter($events, fn($e) => ($e['startDate'] ?? '9999-12-31') >= $filters['startDateFrom']));
+    // Support date range filters (both aliases)
+    $dateFrom = $filters['dateFrom'] ?? $filters['startDateFrom'] ?? null;
+    $dateTo = $filters['dateTo'] ?? $filters['startDateTo'] ?? null;
+
+    if (!empty($dateFrom)) {
+        $events = array_values(array_filter($events, fn($e) => ($e['startDate'] ?? '9999-12-31') >= $dateFrom));
     }
 
-    if (!empty($filters['startDateTo'])) {
-        $events = array_values(array_filter($events, fn($e) => ($e['startDate'] ?? '0000-01-01') <= $filters['startDateTo']));
+    if (!empty($dateTo)) {
+        $events = array_values(array_filter($events, fn($e) => ($e['startDate'] ?? '0000-01-01') <= $dateTo));
     }
 
     return response(true, $events, null);
