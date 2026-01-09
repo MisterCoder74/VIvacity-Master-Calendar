@@ -458,13 +458,6 @@ function getUserTimeblocks($userId) {
 }
 
 /**
- * Compatibility alias.
- */
-function getUserTimeBlocks($userId) {
-    return getUserTimeblocks($userId);
-}
-
-/**
  * Get user preferences for a userId.
  */
 function getUserPreferences($userId) {
