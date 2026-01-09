@@ -1,3 +1,19 @@
+<?php
+// MUST be the first line - before any output
+session_start();
+
+// Verify user is authenticated
+if (!isset($_SESSION['user_id'])) {
+    // Redirect to login if not authenticated
+    header('Location: index.html');
+    exit;
+}
+
+// Optional: Set variables for use in the HTML
+$userEmail = $_SESSION['user_email'] ?? '';
+$userName = $_SESSION['user_name'] ?? '';
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -35,7 +51,7 @@
         <nav class="navbar navbar-expand-lg dashboard-navbar">
             <div class="container-fluid">
                 <!-- Brand -->
-                <a class="navbar-brand" href="dashboard.html">
+                <a class="navbar-brand" href="dashboard.php">
                     <span>📅</span>
                     <span>VIvacity</span>
                 </a>
