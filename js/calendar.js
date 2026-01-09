@@ -6,31 +6,25 @@ let currentMonth = new Date().getMonth();
 let currentYear = new Date().getFullYear();
 let allEvents = [];
 let allTasks = [];
-let allTimeBlocks = [];
 
-let dayModal, eventModal, timeBlockModal;
+let dayModal, eventModal;
 let currentDayModalDateISO = null;
 
 /**
- * Load all tasks, events, and timeblocks from the backend
+ * Load all tasks and events from the backend
  */
 async function loadAllData() {
     try {
-        // These endpoints will be fully implemented in subsequent tasks
-        // For now, we fetch and handle potential 404s or empty responses
-        const [tasksRes, eventsRes, timeBlocksRes] = await Promise.all([
+        const [tasksRes, eventsRes] = await Promise.all([
             fetch('php/tasks.php?action=list', { cache: 'no-store' }).catch(() => ({ json: () => ({ success: false }) })),
-            fetch('php/events.php?action=list', { cache: 'no-store' }).catch(() => ({ json: () => ({ success: false }) })),
-            fetch('php/timeblocks.php?action=list', { cache: 'no-store' }).catch(() => ({ json: () => ({ success: false }) }))
+            fetch('php/events.php?action=list', { cache: 'no-store' }).catch(() => ({ json: () => ({ success: false }) }))
         ]);
 
         const tasksData = await tasksRes.json();
         const eventsData = await eventsRes.json();
-        const timeBlocksData = await timeBlocksRes.json();
 
         if (tasksData.success) allTasks = tasksData.data || [];
         if (eventsData.success) allEvents = eventsData.data || [];
-        if (timeBlocksData.success) allTimeBlocks = timeBlocksData.data || [];
     } catch (error) {
         console.error('Error loading calendar data:', error);
     }
@@ -91,7 +85,7 @@ function renderCalendar() {
 }
 
 /**
- * Create HTML for a single day cell (enhanced for Task 9)
+ * Create HTML for a single day cell
  */
 function renderDayCell(date, isOtherMonth) {
     const dayCell = document.createElement('div');
@@ -117,12 +111,10 @@ function renderDayCell(date, isOtherMonth) {
 
     const events = getEventsForDate(date);
     const tasks = getTasksForDate(date);
-    const timeBlocks = getTimeBlocksForDate(date);
 
     const allItems = [
         ...events.map((e) => ({ ...e, calendarType: 'event', type: 'event' })),
-        ...tasks.map((t) => ({ ...t, calendarType: 'task', type: 'task' })),
-        ...timeBlocks.map((tb) => ({ ...tb, calendarType: 'focus', type: 'focus' }))
+        ...tasks.map((t) => ({ ...t, calendarType: 'task', type: 'task' }))
     ];
 
     const displayItems = allItems.slice(0, 3);
@@ -153,9 +145,6 @@ function renderDayCell(date, isOtherMonth) {
             } else {
                 prefix = '🟢 ';
             }
-        } else if (item.type === 'focus') {
-            className = 'focus-indicator';
-            prefix = '⏰ ';
         }
 
         // Truncate title if too long
@@ -213,11 +202,6 @@ function getTasksForDate(date) {
     return allTasks.filter((task) => task.dueDate === dateStr);
 }
 
-function getTimeBlocksForDate(date) {
-    const dateStr = formatDateToISO(date);
-    return allTimeBlocks.filter((tb) => tb.startDate === dateStr);
-}
-
 function formatDateToISO(date) {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -260,7 +244,6 @@ function closeDayModal() {
 function openDayModal(date) {
     const events = getEventsForDate(date);
     const tasks = getTasksForDate(date);
-    const timeBlocks = getTimeBlocksForDate(date);
 
     const dateStr = date.toLocaleDateString('en-US', {
         weekday: 'long',
@@ -276,7 +259,6 @@ function openDayModal(date) {
 
     const eventsSection = document.getElementById('eventsSection');
     const tasksSection = document.getElementById('tasksSection');
-    const timeBlocksSection = document.getElementById('timeBlocksSection');
 
     if (eventsSection) {
         const eventsHtml = events
@@ -331,30 +313,6 @@ function openDayModal(date) {
       `;
     }
 
-    if (timeBlocksSection) {
-        const timeBlocksHtml = timeBlocks
-            .map((tb) => {
-                return `
-          <div class="day-modal-item">
-            <div>
-              <div class="day-modal-item-title event-focus">${sanitize(tb.title)}</div>
-              <div class="day-modal-item-meta">${sanitize(tb.startTime)} - ${sanitize(tb.endTime)} (${sanitize(tb.type)})</div>
-            </div>
-            <div class="day-modal-item-actions">
-              <button class="btn btn-sm btn-outline-primary" onclick="editTimeBlock('${tb.id}')">Edit</button>
-              <button class="btn btn-sm btn-outline-danger" onclick="deleteTimeBlock('${tb.id}')">Delete</button>
-            </div>
-          </div>
-        `;
-            })
-            .join('');
-
-        timeBlocksSection.innerHTML = `
-        <h6 class="mt-1 mb-2">Focus & Time Blocks</h6>
-        ${timeBlocksHtml || '<p class="text-muted">No time blocks</p>'}
-      `;
-    }
-
     dayModal?.show();
 }
 
@@ -398,7 +356,7 @@ function sanitize(str) {
     return div.innerHTML;
 }
 
-// Global functions for edit/delete buttons (enhanced for Task 9)
+// Global functions for edit/delete buttons
 window.editEvent = async (id) => {
     try {
         await openEditEventModal(id);
@@ -441,9 +399,6 @@ window.deleteEvent = async (id) => {
     }
 };
 
-window.editTimeBlock = (id) => console.log('Edit timeblock', id);
-window.deleteTimeBlock = (id) => console.log('Delete timeblock', id);
-
 document.addEventListener('DOMContentLoaded', async function () {
     try {
         const user = await Auth.checkSession();
@@ -456,12 +411,11 @@ document.addEventListener('DOMContentLoaded', async function () {
 
         dayModal = new bootstrap.Modal(document.getElementById('dayModal'));
 
-        // Task modal (Task 6)
+        // Task modal
         initializeTaskModal();
 
-        // Placeholder modals
+        // Event modal
         eventModal = new bootstrap.Modal(document.getElementById('eventModal'));
-        timeBlockModal = new bootstrap.Modal(document.getElementById('timeBlockModal'));
 
         renderCalendar();
 

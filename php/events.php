@@ -1,201 +1,194 @@
 <?php
-/**
- * Events API Endpoint
- * Handles all event/meeting-related CRUD operations (create, read, update, delete, list)
- * 
- * All operations are scoped to the authenticated user.
- */
-
-// Initialize session and required files
+// MUST be first line
 session_start();
-require_once __DIR__ . '/config.php';
-require_once __DIR__ . '/functions.php';
 
-// Set JSON response headers
-header('Content-Type: application/json');
-header('Cache-Control: no-store');
-
-// Verify authentication
-$user = getCurrentUser();
-if (!$user) {
-  http_response_code(401);
-  echo json_encode(['success' => false, 'error' => 'Unauthorized']);
-  exit;
+// Check if user is authenticated
+if (!isset($_SESSION['user_id'])) {
+    http_response_code(401);
+    echo json_encode(['success' => false, 'error' => 'Unauthorized']);
+    exit;
 }
 
-// Get user ID from session
-$userId = $user['user_id'];
+$userId = $_SESSION['user_id'];
 
-// Get action from request
-$action = $_REQUEST['action'] ?? null;
+// Determine action
+$action = $_GET['action'] ?? '';
 
-// Validate action parameter exists
-if (!$action) {
-  http_response_code(400);
-  echo json_encode(['success' => false, 'error' => 'Action parameter required']);
-  exit;
+// Data file path
+$dataFile = __DIR__ . '/../data/events.json';
+
+// Ensure data directory exists
+$dataDir = dirname($dataFile);
+if (!is_dir($dataDir)) {
+    mkdir($dataDir, 0755, true);
 }
 
-// Handle different actions via switch statement
+// Initialize file if it doesn't exist
+if (!file_exists($dataFile)) {
+    file_put_contents($dataFile, json_encode(['events' => []]));
+}
+
 try {
-  switch ($action) {
-    case 'list':
-      // List all events for user with optional filtering
-      $filters = isset($_GET['filters']) ? json_decode($_GET['filters'], true) : [];
-      $result = listUserEvents($userId, $filters);
-      http_response_code($result['success'] ? 200 : 500);
-      echo json_encode($result);
-      break;
-    
-    case 'get':
-      // Get single event by ID
-      $eventId = $_REQUEST['eventId'] ?? null;
-      if (!$eventId) {
-        http_response_code(400);
-        echo json_encode(['success' => false, 'error' => 'Event ID required']);
-        exit;
-      }
-      $result = getEvent($eventId, $userId);
-      http_response_code($result['success'] ? 200 : 404);
-      echo json_encode($result);
-      break;
-    
-    case 'create':
-      // Create new event
-      $data = json_decode(file_get_contents('php://input'), true);
-      if (!is_array($data)) {
-        http_response_code(400);
-        echo json_encode(['success' => false, 'error' => 'Invalid JSON payload']);
-        exit;
-      }
-      
-      // Validate input
-      $validation = validateEvent($data);
-      if (!$validation['success']) {
-        http_response_code(400);
-        echo json_encode(['success' => false, 'error' => $validation['error']]);
-        exit;
-      }
-      
-      // Prepare event data with sanitization
-      $eventData = [
-        'title' => sanitizeInput($data['title']),
-        'description' => sanitizeInput($data['description'] ?? ''),
-        'type' => $data['type'] ?? 'other',
-        'startDate' => $data['startDate'],
-        'startTime' => $data['startTime'],
-        'endDate' => $data['endDate'],
-        'endTime' => $data['endTime'],
-        'duration' => $data['duration'] ?? null,
-        'location' => sanitizeInput($data['location'] ?? ''),
-        'platform' => $data['platform'] ?? 'none',
-        'platformLink' => sanitizeInput($data['platformLink'] ?? ''),
-        'attendees' => is_array($data['attendees'] ?? []) ? $data['attendees'] : [],
-        'status' => $data['status'] ?? 'scheduled',
-        'isRecurring' => $data['isRecurring'] ?? false,
-        'recurringPattern' => $data['recurringPattern'] ?? null,
-        'notes' => sanitizeInput($data['notes'] ?? ''),
-        'actionItems' => is_array($data['actionItems'] ?? []) ? $data['actionItems'] : [],
-        'reminders' => is_array($data['reminders'] ?? []) ? $data['reminders'] : []
-      ];
-      
-      $result = createEvent($userId, $eventData);
-      
-      if ($result['success']) {
-        http_response_code(201);
-      }
-      echo json_encode($result);
-      break;
-    
-    case 'update':
-      // Update existing event
-      $data = json_decode(file_get_contents('php://input'), true);
-      if (!is_array($data)) {
-        http_response_code(400);
-        echo json_encode(['success' => false, 'error' => 'Invalid JSON payload']);
-        exit;
-      }
-      $eventId = $data['eventId'] ?? null;
-      
-      if (!$eventId) {
-        http_response_code(400);
-        echo json_encode(['success' => false, 'error' => 'Event ID required']);
-        exit;
-      }
-      
-      // Verify event exists and belongs to user
-      $existingEvent = getEvent($eventId, $userId);
-      if (!$existingEvent['success']) {
-        http_response_code(404);
-        echo json_encode(['success' => false, 'error' => 'Event not found']);
-        exit;
-      }
-      
-      // Validate input
-      $validation = validateEvent($data, true);
-      if (!$validation['success']) {
-        http_response_code(400);
-        echo json_encode(['success' => false, 'error' => $validation['error']]);
-        exit;
-      }
-      
-      // Prepare event data with sanitization (partial updates supported)
-      $eventData = [];
+    switch ($action) {
+        case 'list':
+            // Get all events for current user
+            $allEvents = json_decode(file_get_contents($dataFile), true)['events'] ?? [];
+            $userEvents = array_filter($allEvents, fn($event) => $event['userId'] === $userId);
+            echo json_encode([
+                'success' => true,
+                'data' => array_values($userEvents)
+            ]);
+            break;
 
-      foreach (['title', 'description', 'location', 'platformLink', 'notes'] as $field) {
-        if (array_key_exists($field, $data)) {
-          $eventData[$field] = sanitizeInput($data[$field]);
-        }
-      }
+        case 'get':
+            // Get single event
+            $eventId = $_GET['id'] ?? $_GET['eventId'] ?? '';
+            if (!$eventId) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'error' => 'Event ID required']);
+                break;
+            }
 
-      foreach ([
-        'type', 'startDate', 'startTime', 'endDate', 'endTime', 'duration', 'attendees',
-        'platform', 'status', 'isRecurring', 'recurringPattern', 'actionItems', 'reminders'
-      ] as $field) {
-        if (array_key_exists($field, $data)) {
-          $eventData[$field] = $data[$field];
-        }
-      }
-      
-      $result = updateEvent($eventId, $userId, $eventData);
-      http_response_code($result['success'] ? 200 : 500);
-      echo json_encode($result);
-      break;
-    
-    case 'delete':
-      // Delete event
-      $eventId = $_REQUEST['eventId'] ?? null;
-      
-      if (!$eventId) {
-        http_response_code(400);
-        echo json_encode(['success' => false, 'error' => 'Event ID required']);
-        exit;
-      }
-      
-      // Verify event exists and belongs to user
-      $existingEvent = getEvent($eventId, $userId);
-      if (!$existingEvent['success']) {
-        http_response_code(404);
-        echo json_encode(['success' => false, 'error' => 'Event not found']);
-        exit;
-      }
-      
-      $result = deleteEvent($eventId, $userId);
-      http_response_code($result['success'] ? 200 : 500);
-      echo json_encode($result);
-      break;
-    
-    default:
-      // Invalid action
-      http_response_code(400);
-      echo json_encode(['success' => false, 'error' => 'Invalid action']);
-      exit;
-  }
+            $data = json_decode(file_get_contents($dataFile), true);
+            $event = null;
+            foreach ($data['events'] ?? [] as $e) {
+                if ($e['id'] === $eventId && $e['userId'] === $userId) {
+                    $event = $e;
+                    break;
+                }
+            }
+
+            if ($event) {
+                echo json_encode(['success' => true, 'data' => $event]);
+            } else {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'error' => 'Event not found']);
+            }
+            break;
+
+        case 'create':
+            // Create new event
+            $input = json_decode(file_get_contents('php://input'), true);
+            
+            // Validate required fields
+            if (empty($input['title']) || empty($input['startDate'])) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'error' => 'Title and start date required']);
+                break;
+            }
+
+            $newEvent = [
+                'id' => uniqid('event_'),
+                'userId' => $userId,
+                'title' => htmlspecialchars($input['title']),
+                'description' => htmlspecialchars($input['description'] ?? ''),
+                'type' => $input['type'] ?? 'personal',
+                'startDate' => $input['startDate'],
+                'startTime' => $input['startTime'] ?? '00:00',
+                'endDate' => $input['endDate'] ?? $input['startDate'],
+                'endTime' => $input['endTime'] ?? '01:00',
+                'location' => htmlspecialchars($input['location'] ?? ''),
+                'platform' => $input['platform'] ?? 'in_person',
+                'platformLink' => htmlspecialchars($input['platformLink'] ?? ''),
+                'attendees' => $input['attendees'] ?? [],
+                'notes' => htmlspecialchars($input['notes'] ?? ''),
+                'status' => $input['status'] ?? 'scheduled',
+                'isRecurring' => $input['isRecurring'] ?? false,
+                'recurrencePattern' => $input['recurrencePattern'] ?? null,
+                'createdAt' => date('c'),
+                'updatedAt' => date('c')
+            ];
+
+            $data = json_decode(file_get_contents($dataFile), true);
+            $data['events'][] = $newEvent;
+            file_put_contents($dataFile, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+
+            echo json_encode(['success' => true, 'data' => $newEvent]);
+            break;
+
+        case 'update':
+            // Update event
+            $input = json_decode(file_get_contents('php://input'), true);
+            $eventId = $_GET['id'] ?? $_GET['eventId'] ?? $input['eventId'] ?? '';
+
+            if (!$eventId) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'error' => 'Event ID required']);
+                break;
+            }
+
+            $data = json_decode(file_get_contents($dataFile), true);
+            $updated = false;
+
+            foreach ($data['events'] ?? [] as &$event) {
+                if ($event['id'] === $eventId && $event['userId'] === $userId) {
+                    // Update allowed fields
+                    if (isset($input['title'])) $event['title'] = htmlspecialchars($input['title']);
+                    if (isset($input['description'])) $event['description'] = htmlspecialchars($input['description']);
+                    if (isset($input['type'])) $event['type'] = $input['type'];
+                    if (isset($input['startDate'])) $event['startDate'] = $input['startDate'];
+                    if (isset($input['startTime'])) $event['startTime'] = $input['startTime'];
+                    if (isset($input['endDate'])) $event['endDate'] = $input['endDate'];
+                    if (isset($input['endTime'])) $event['endTime'] = $input['endTime'];
+                    if (isset($input['location'])) $event['location'] = htmlspecialchars($input['location']);
+                    if (isset($input['platform'])) $event['platform'] = $input['platform'];
+                    if (isset($input['platformLink'])) $event['platformLink'] = htmlspecialchars($input['platformLink']);
+                    if (isset($input['attendees'])) $event['attendees'] = $input['attendees'];
+                    if (isset($input['notes'])) $event['notes'] = htmlspecialchars($input['notes']);
+                    if (isset($input['status'])) $event['status'] = $input['status'];
+                    if (isset($input['isRecurring'])) $event['isRecurring'] = $input['isRecurring'];
+                    if (isset($input['recurrencePattern'])) $event['recurrencePattern'] = $input['recurrencePattern'];
+                    $event['updatedAt'] = date('c');
+                    $updated = true;
+                    break;
+                }
+            }
+
+            if ($updated) {
+                file_put_contents($dataFile, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+                echo json_encode(['success' => true, 'data' => 'Event updated']);
+            } else {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'error' => 'Event not found or unauthorized']);
+            }
+            break;
+
+        case 'delete':
+            // Delete event
+            $eventId = $_GET['id'] ?? $_GET['eventId'] ?? $_POST['eventId'] ?? '';
+            if (!$eventId) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'error' => 'Event ID required']);
+                break;
+            }
+
+            $data = json_decode(file_get_contents($dataFile), true);
+            $deleted = false;
+
+            foreach ($data['events'] ?? [] as $index => $event) {
+                if ($event['id'] === $eventId && $event['userId'] === $userId) {
+                    unset($data['events'][$index]);
+                    $deleted = true;
+                    break;
+                }
+            }
+
+            if ($deleted) {
+                $data['events'] = array_values($data['events']); // Re-index array
+                file_put_contents($dataFile, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+                echo json_encode(['success' => true, 'data' => 'Event deleted']);
+            } else {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'error' => 'Event not found or unauthorized']);
+            }
+            break;
+
+        default:
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'Invalid action']);
+    }
 } catch (Exception $e) {
-  // Handle any unexpected errors
-  http_response_code(500);
-  echo json_encode([
-    'success' => false,
-    'error' => 'Server error: ' . $e->getMessage()
-  ]);
+    http_response_code(500);
+    echo json_encode(['success' => false, 'error' => $e->getMessage()]);
 }
+?>

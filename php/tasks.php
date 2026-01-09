@@ -1,189 +1,176 @@
 <?php
-/**
- * Tasks API Endpoint
- * Handles all task-related CRUD operations (create, read, update, delete, list)
- * 
- * All operations are scoped to the authenticated user.
- */
-
-// Initialize session and required files
+// MUST be first line
 session_start();
-require_once __DIR__ . '/config.php';
-require_once __DIR__ . '/functions.php';
 
-// Set JSON response headers
-header('Content-Type: application/json');
-header('Cache-Control: no-store');
-
-// Verify authentication
-$user = getCurrentUser();
-if (!$user) {
-  http_response_code(401);
-  echo json_encode(['success' => false, 'error' => 'Unauthorized']);
-  exit;
+// Check if user is authenticated
+if (!isset($_SESSION['user_id'])) {
+    http_response_code(401);
+    echo json_encode(['success' => false, 'error' => 'Unauthorized']);
+    exit;
 }
 
-// Get user ID from session
-$userId = $user['user_id'];
+$userId = $_SESSION['user_id'];
 
-// Get action from request
-$action = $_REQUEST['action'] ?? null;
+// Determine action
+$action = $_GET['action'] ?? '';
 
-// Validate action parameter exists
-if (!$action) {
-  http_response_code(400);
-  echo json_encode(['success' => false, 'error' => 'Action parameter required']);
-  exit;
+// Data file path (relative to this PHP file)
+$dataFile = __DIR__ . '/../data/tasks.json';
+
+// Ensure data directory exists
+$dataDir = dirname($dataFile);
+if (!is_dir($dataDir)) {
+    mkdir($dataDir, 0755, true);
 }
 
-// Handle different actions via switch statement
+// Initialize file if it doesn't exist
+if (!file_exists($dataFile)) {
+    file_put_contents($dataFile, json_encode(['tasks' => []]));
+}
+
 try {
-  switch ($action) {
-    case 'list':
-      // List all tasks for user with optional filtering
-      $filters = isset($_GET['filters']) ? json_decode($_GET['filters'], true) : [];
-      $result = listUserTasks($userId, $filters);
-      http_response_code($result['success'] ? 200 : 500);
-      echo json_encode($result);
-      break;
-    
-    case 'get':
-      // Get single task by ID
-      $taskId = $_REQUEST['taskId'] ?? null;
-      if (!$taskId) {
-        http_response_code(400);
-        echo json_encode(['success' => false, 'error' => 'Task ID required']);
-        exit;
-      }
-      $result = getTask($taskId, $userId);
-      http_response_code($result['success'] ? 200 : 404);
-      echo json_encode($result);
-      break;
-    
-    case 'create':
-      // Create new task
-      $data = json_decode(file_get_contents('php://input'), true);
-      
-      // Validate input
-      $validation = validateTask($data);
-      if (!$validation['success']) {
-        http_response_code(400);
-        echo json_encode(['success' => false, 'error' => $validation['error']]);
-        exit;
-      }
-      
-      // Prepare task data with sanitization
-      $taskData = [
-        'title' => sanitizeInput($data['title']),
-        'description' => sanitizeInput($data['description'] ?? ''),
-        'dueDate' => $data['dueDate'] ?? null,
-        'dueTime' => $data['dueTime'] ?? null,
-        'priority' => $data['priority'] ?? 'medium',
-        'status' => $data['status'] ?? 'pending',
-        'category' => $data['category'] ?? 'other',
-        'tags' => is_array($data['tags'] ?? []) ? $data['tags'] : [],
-        'relatedEventId' => $data['relatedEventId'] ?? null,
-        'notes' => sanitizeInput($data['notes'] ?? '')
-      ];
-      
-      $result = createTask($userId, $taskData);
-      
-      if ($result['success']) {
-        http_response_code(201);
-      }
-      echo json_encode($result);
-      break;
-    
-    case 'update':
-      // Update existing task
-      $data = json_decode(file_get_contents('php://input'), true);
-      if (!is_array($data)) {
-        http_response_code(400);
-        echo json_encode(['success' => false, 'error' => 'Invalid JSON payload']);
-        exit;
-      }
-      $taskId = $data['taskId'] ?? null;
-      
-      if (!$taskId) {
-        http_response_code(400);
-        echo json_encode(['success' => false, 'error' => 'Task ID required']);
-        exit;
-      }
-      
-      // Verify task exists and belongs to user
-      $existingTask = getTask($taskId, $userId);
-      if (!$existingTask['success']) {
-        http_response_code(404);
-        echo json_encode(['success' => false, 'error' => 'Task not found']);
-        exit;
-      }
-      
-      // Validate input
-      $validation = validateTask($data, true);
-      if (!$validation['success']) {
-        http_response_code(400);
-        echo json_encode(['success' => false, 'error' => $validation['error']]);
-        exit;
-      }
-      
-      // Prepare task data with sanitization (partial updates supported)
-      $taskData = [];
+    switch ($action) {
+        case 'list':
+            // Get all tasks for current user
+            $allTasks = json_decode(file_get_contents($dataFile), true)['tasks'] ?? [];
+            $userTasks = array_filter($allTasks, fn($task) => $task['userId'] === $userId);
+            echo json_encode([
+                'success' => true,
+                'data' => array_values($userTasks)
+            ]);
+            break;
 
-      foreach (['title', 'description', 'notes'] as $field) {
-        if (array_key_exists($field, $data)) {
-          $taskData[$field] = sanitizeInput($data[$field]);
-        }
-      }
+        case 'get':
+            // Get single task
+            $taskId = $_GET['id'] ?? $_GET['taskId'] ?? '';
+            if (!$taskId) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'error' => 'Task ID required']);
+                break;
+            }
 
-      foreach (['dueDate', 'dueTime', 'priority', 'status', 'category', 'relatedEventId'] as $field) {
-        if (array_key_exists($field, $data)) {
-          $taskData[$field] = $data[$field];
-        }
-      }
+            $data = json_decode(file_get_contents($dataFile), true);
+            $task = null;
+            foreach ($data['tasks'] ?? [] as $t) {
+                if ($t['id'] === $taskId && $t['userId'] === $userId) {
+                    $task = $t;
+                    break;
+                }
+            }
 
-      if (array_key_exists('tags', $data)) {
-        $taskData['tags'] = is_array($data['tags']) ? $data['tags'] : [];
-      }
-      
-      $result = updateTask($taskId, $userId, $taskData);
-      http_response_code($result['success'] ? 200 : 500);
-      echo json_encode($result);
-      break;
-    
-    case 'delete':
-      // Delete task
-      $taskId = $_REQUEST['taskId'] ?? null;
-      
-      if (!$taskId) {
-        http_response_code(400);
-        echo json_encode(['success' => false, 'error' => 'Task ID required']);
-        exit;
-      }
-      
-      // Verify task exists and belongs to user
-      $existingTask = getTask($taskId, $userId);
-      if (!$existingTask['success']) {
-        http_response_code(404);
-        echo json_encode(['success' => false, 'error' => 'Task not found']);
-        exit;
-      }
-      
-      $result = deleteTask($taskId, $userId);
-      http_response_code($result['success'] ? 200 : 500);
-      echo json_encode($result);
-      break;
-    
-    default:
-      // Invalid action
-      http_response_code(400);
-      echo json_encode(['success' => false, 'error' => 'Invalid action']);
-      exit;
-  }
+            if ($task) {
+                echo json_encode(['success' => true, 'data' => $task]);
+            } else {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'error' => 'Task not found']);
+            }
+            break;
+
+        case 'create':
+            // Create new task
+            $input = json_decode(file_get_contents('php://input'), true);
+            
+            // Validate required fields
+            if (empty($input['title']) || empty($input['dueDate'])) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'error' => 'Title and due date required']);
+                break;
+            }
+
+            $newTask = [
+                'id' => uniqid('task_'),
+                'userId' => $userId,
+                'title' => htmlspecialchars($input['title']),
+                'description' => htmlspecialchars($input['description'] ?? ''),
+                'priority' => $input['priority'] ?? 'medium',
+                'status' => $input['status'] ?? 'pending',
+                'dueDate' => $input['dueDate'],
+                'dueTime' => $input['dueTime'] ?? '00:00',
+                'createdAt' => date('c'),
+                'updatedAt' => date('c')
+            ];
+
+            $data = json_decode(file_get_contents($dataFile), true);
+            $data['tasks'][] = $newTask;
+            file_put_contents($dataFile, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+
+            echo json_encode(['success' => true, 'data' => $newTask]);
+            break;
+
+        case 'update':
+            // Update task
+            $input = json_decode(file_get_contents('php://input'), true);
+            $taskId = $_GET['id'] ?? $_GET['taskId'] ?? $input['taskId'] ?? '';
+
+            if (!$taskId) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'error' => 'Task ID required']);
+                break;
+            }
+
+            $data = json_decode(file_get_contents($dataFile), true);
+            $updated = false;
+
+            foreach ($data['tasks'] ?? [] as &$task) {
+                if ($task['id'] === $taskId && $task['userId'] === $userId) {
+                    // Update allowed fields
+                    if (isset($input['title'])) $task['title'] = htmlspecialchars($input['title']);
+                    if (isset($input['description'])) $task['description'] = htmlspecialchars($input['description']);
+                    if (isset($input['priority'])) $task['priority'] = $input['priority'];
+                    if (isset($input['status'])) $task['status'] = $input['status'];
+                    if (isset($input['dueDate'])) $task['dueDate'] = $input['dueDate'];
+                    if (isset($input['dueTime'])) $task['dueTime'] = $input['dueTime'];
+                    $task['updatedAt'] = date('c');
+                    $updated = true;
+                    break;
+                }
+            }
+
+            if ($updated) {
+                file_put_contents($dataFile, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+                echo json_encode(['success' => true, 'data' => 'Task updated']);
+            } else {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'error' => 'Task not found or unauthorized']);
+            }
+            break;
+
+        case 'delete':
+            // Delete task
+            $taskId = $_GET['id'] ?? $_GET['taskId'] ?? $_POST['taskId'] ?? '';
+            if (!$taskId) {
+                http_response_code(400);
+                echo json_encode(['success' => false, 'error' => 'Task ID required']);
+                break;
+            }
+
+            $data = json_decode(file_get_contents($dataFile), true);
+            $deleted = false;
+
+            foreach ($data['tasks'] ?? [] as $index => $task) {
+                if ($task['id'] === $taskId && $task['userId'] === $userId) {
+                    unset($data['tasks'][$index]);
+                    $deleted = true;
+                    break;
+                }
+            }
+
+            if ($deleted) {
+                $data['tasks'] = array_values($data['tasks']); // Re-index array
+                file_put_contents($dataFile, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+                echo json_encode(['success' => true, 'data' => 'Task deleted']);
+            } else {
+                http_response_code(404);
+                echo json_encode(['success' => false, 'error' => 'Task not found or unauthorized']);
+            }
+            break;
+
+        default:
+            http_response_code(400);
+            echo json_encode(['success' => false, 'error' => 'Invalid action']);
+    }
 } catch (Exception $e) {
-  // Handle any unexpected errors
-  http_response_code(500);
-  echo json_encode([
-    'success' => false,
-    'error' => 'Server error: ' . $e->getMessage()
-  ]);
+    http_response_code(500);
+    echo json_encode(['success' => false, 'error' => $e->getMessage()]);
 }
+?>
