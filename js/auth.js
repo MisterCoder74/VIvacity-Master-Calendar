@@ -180,7 +180,7 @@ const Auth = {
 
             if (user) {
                 // User is authenticated, redirect to dashboard
-                window.location.href = 'dashboard.html';
+                window.location.href = 'dashboard.php';
             } else {
                 // User is not authenticated, stay on login page
                 // Initialize Google Sign-In library

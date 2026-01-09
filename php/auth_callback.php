@@ -201,5 +201,5 @@ session_regenerate_id(true);
 logEvent("Session established for user: {$user['email']}", 'info');
 
 // Redirect to dashboard
-header('Location: ../dashboard.html');
+header('Location: ../dashboard.php');
 exit;
