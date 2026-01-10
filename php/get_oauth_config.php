@@ -16,10 +16,8 @@ header('Pragma: no-cache');
 $response = [
     'client_id' => OAUTH_CLIENT_ID,
     'redirect_uri' => OAUTH_REDIRECT_URI,
-    'scope' => OAUTH_AUTH_SCOPE,
-    'google_api_endpoint' => OAUTH_GOOGLE_API_ENDPOINT
+    'scope' => 'openid email profile',
+    'google_api_endpoint' => 'https://accounts.google.com/o/oauth2/v2/auth'
 ];
-
-logEvent("OAuth config requested", 'info');
 
 echo json_encode($response);

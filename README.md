@@ -1,40 +1,48 @@
-# VIvacity-Master-Calendar
+# VIvacity Master Calendar
 
-A collaborative calendar application with Google OAuth authentication.
+A minimal calendar application with Google OAuth authentication and a welcome dashboard.
+
+## Overview
+
+This is a clean slate implementation providing only:
+- Google OAuth 2.0 authentication
+- User data persistence (JSON)
+- Welcome dashboard with logout functionality
+
+This minimal foundation is ready for incremental feature development.
 
 ## Features
 
-- Google OAuth 2.0 authentication
-- Secure session management
-- JSON-based user storage
-- RESTful API endpoints
+- ✅ Google OAuth 2.0 authentication
+- ✅ Secure session management
+- ✅ JSON-based user storage
+- ✅ Clean, minimal UI
+- ✅ User profile picture support
 
 ## Prerequisites
 
-- PHP 8.3 or higher
+- PHP 8.0 or higher
 - PHP cURL extension enabled
 - Web server (Apache, Nginx, or PHP built-in server for development)
 
-## Setup Instructions
+## Quick Start
 
 ### 1. Google Cloud Console Configuration
 
-To enable Google OAuth authentication, you need to configure a Google Cloud project:
-
 1. Go to [Google Cloud Console](https://console.cloud.google.com/)
 2. Create a new project or select an existing one
-3. Enable the Google+ API or Google Identity Services:
+3. Enable Google Identity Services API:
    - Navigate to "APIs & Services" > "Library"
-   - Search for "Google+ API" or "Google Identity"
+   - Search for "Google Identity"
    - Click "Enable"
 4. Create OAuth 2.0 credentials:
    - Go to "APIs & Services" > "Credentials"
    - Click "Create Credentials" > "OAuth 2.0 Client ID"
-   - Configure the consent screen if prompted
    - Application type: "Web application"
-   - Add authorized redirect URI:
-     - For development: `http://localhost:8000/php/auth_callback.php`
-     - For production: `https://yourdomain.com/php/auth_callback.php`
+   - Authorized redirect URI:
+     ```
+     https://testsite.vivacitydesign.net/CTO-TESTS/VIvacity-Master-Calendar-main/php/auth_callback.php
+     ```
 5. Copy your Client ID and Client Secret
 
 ### 2. Configure OAuth Credentials
@@ -43,13 +51,14 @@ To enable Google OAuth authentication, you need to configure a Google Cloud proj
    ```bash
    cp config/google_oauth_config.example.php config/google_oauth_config.php
    ```
-2. Open `/config/google_oauth_config.php`
-3. Replace the placeholder values:
+
+2. Open `config/google_oauth_config.php` and replace placeholder values:
    ```php
    'client_id' => 'YOUR_ACTUAL_CLIENT_ID.apps.googleusercontent.com',
    'client_secret' => 'YOUR_ACTUAL_CLIENT_SECRET',
    ```
-4. Update `redirect_uri` if deploying to a domain other than localhost:8000
+
+3. Ensure the `redirect_uri` matches what you configured in Google Cloud Console.
 
 **SECURITY WARNING:** Never commit your actual credentials to version control. The `google_oauth_config.php` file is included in `.gitignore` to prevent accidental commits.
 
@@ -58,123 +67,161 @@ To enable Google OAuth authentication, you need to configure a Google Cloud proj
 Ensure the `/data` directory is writable by the web server:
 
 ```bash
-chmod 755 /data
-chmod 644 /data/users.json
+chmod 755 data/
+chmod 644 data/users.json
 ```
 
-### 4. Start the Development Server
+### 4. Deploy and Test
 
-For local development, you can use PHP's built-in server:
-
-```bash
-php -S localhost:8000
-```
-
-Then navigate to `http://localhost:8000` in your browser.
+1. Deploy all files to your web server
+2. Navigate to `index.html`
+3. Click "Sign in with Google"
+4. Authenticate with your Google account
+5. Verify you see the welcome dashboard with "Benvenuti" message
+6. Test logout functionality
 
 ## Project Structure
 
 ```
-/
-├── css/                    # Stylesheets
-├── js/                     # JavaScript files
-├── php/                    # Backend PHP files
-│   ├── config.php         # Main configuration
-│   ├── functions.php      # Utility functions
-│   ├── auth_callback.php  # OAuth callback handler
-│   ├── auth.php           # Session check endpoint
-│   └── logout.php         # Logout handler
-├── config/                 # Configuration files
-│   └── google_oauth_config.php  # OAuth credentials (not in git)
-├── data/                   # Data storage
-│   └── users.json         # User database (not in git)
-└── README.md              # This file
+VIvacity-Master-Calendar-main/
+├── index.html                          # Login page
+├── dashboard.php                       # Welcome dashboard
+├── config/
+│   └── google_oauth_config.example.php  # OAuth config template
+├── php/
+│   ├── config.php                      # Session & paths config
+│   ├── functions.php                   # Utility functions
+│   ├── auth_callback.php               # OAuth callback handler
+│   ├── get_oauth_config.php            # OAuth config endpoint
+│   └── logout.php                     # Logout handler
+├── data/
+│   ├── users.json                      # User data storage (auto-created)
+│   └── users.example.json              # Example structure
+├── css/
+│   └── style.css                      # Minimal styling
+├── js/
+│   └── auth.js                        # Authentication module
+├── SETUP.md                           # Detailed setup guide
+├── README.md                          # This file
+├── .gitignore                         # Git ignore rules
+└── .htaccess                          # Apache configuration
 ```
+
+## OAuth Flow
+
+1. User clicks "Sign in with Google" on login page
+2. Google Sign-In JavaScript library initializes
+3. User is redirected to Google's authorization page
+4. User grants permission to access their profile
+5. Google redirects back to `php/auth_callback.php` with authorization code
+6. Backend exchanges authorization code for access token
+7. Backend fetches user profile information using access token
+8. Backend creates or updates user record in `data/users.json`
+9. Backend establishes PHP session with user data
+10. User is redirected to `dashboard.php`
+11. Dashboard displays "Benvenuti" message with user's name
+12. Clicking "Logout" clears session and redirects to login page
+
+## Security Features
+
+- Session cookies are HTTP-only and use SameSite Lax policy
+- Session name set to `LC_IDENTIFIER` for isolation
+- All user input is sanitized to prevent XSS attacks
+- Email addresses are validated before storage
+- OAuth Client Secret is never exposed to frontend
+- Sessions expire after 24 hours
+- Session ID is regenerated after login for security
+- Secure password-less authentication via Google OAuth
 
 ## API Endpoints
 
-### Check Authentication Status
+### OAuth Configuration
 ```
-GET /php/auth.php
+GET /php/get_oauth_config.php
 ```
+Returns non-sensitive OAuth configuration to frontend.
 
-**Response (authenticated):**
-```json
-{
-  "authenticated": true,
-  "user": {
-    "user_id": "user_123456",
-    "name": "John Doe",
-    "email": "john@example.com",
-    "profile_picture": "https://..."
-  }
-}
+### OAuth Callback
 ```
-
-**Response (not authenticated):**
-```json
-{
-  "authenticated": false
-}
+GET /php/auth_callback.php?code=AUTHORIZATION_CODE
 ```
+Handles Google OAuth callback, creates/updates user, establishes session.
 
 ### Logout
 ```
 GET /php/logout.php
 ```
+Destroys session and redirects to index.html.
 
-**Response:**
+## Data Storage
+
+User data is stored in `data/users.json` with the following structure:
+
 ```json
 {
-  "success": true
+  "users": [
+    {
+      "id": "user_abc123...",
+      "google_id": "google_id_123",
+      "email": "user@example.com",
+      "name": "John Doe",
+      "picture": "https://...",
+      "created_at": "2024-01-01T00:00:00+00:00",
+      "last_login": "2024-01-01T12:00:00+00:00"
+    }
+  ]
 }
 ```
 
-Redirects to `/index.html` for non-AJAX requests.
-
-## OAuth Flow
-
-1. User clicks "Login with Google" button on the frontend
-2. User is redirected to Google's authorization page
-3. User grants permission
-4. Google redirects back to `/php/auth_callback.php` with authorization code
-5. Backend exchanges code for access token
-6. Backend fetches user profile information
-7. Backend creates/updates user in `users.json`
-8. Backend establishes PHP session
-9. User is redirected to `/dashboard.html`
-
-## Security Features
-
-- Session cookies are HTTP-only and use SameSite policy
-- All user input is sanitized to prevent XSS attacks
-- Email addresses are validated before storage
-- OAuth Client Secret is never exposed to frontend
-- Sessions expire after 24 hours
-- Secure password-less authentication via Google
-
 ## Development Notes
 
-- Sessions are stored with the name `LC_IDENTIFIER`
+- Sessions are stored with name `LC_IDENTIFIER`
 - Session lifetime: 24 hours (86400 seconds)
 - All timestamps use ISO 8601 format (UTC)
-- No file locking is used on JSON files (as per specification)
+- No file locking is used on JSON files
+- User data is automatically created on first login
 
 ## Troubleshooting
 
-### "Authorization Error" after Google login
-- Verify your redirect URI in Google Cloud Console matches exactly
-- Check that your Client ID and Client Secret are correct
-- Ensure the Google+ API is enabled
+### "No authorization code received from Google"
+- Verify redirect URI in Google Cloud Console matches exactly
+- Ensure you're using HTTPS in production environments
+- Check that the OAuth consent screen is configured
 
-### Session not persisting
+### User data not saving
+- Check that `data/` directory is writable by web server
+- Verify PHP has write permissions
+- Check server error logs for permission issues
+
+### Session not persisting between pages
 - Check that cookies are enabled in your browser
 - Verify PHP session settings in `php/config.php`
-- Ensure `/tmp` directory is writable (default PHP session storage)
+- Ensure session name `LC_IDENTIFIER` is consistent
+- Check browser's incognito/private browsing mode
 
-### "Failed to write JSON file"
-- Check file permissions on `/data/users.json`
-- Ensure the web server has write access to the `/data` directory
+### Google Sign-In button not appearing
+- Verify Google Sign-In library is loading (check browser console)
+- Ensure `php/get_oauth_config.php` is accessible
+- Check that Client ID is configured correctly
+- Verify network connectivity to Google's servers
+
+### Redirect loop between login and dashboard
+- Check that `session_start()` is called before any output
+- Verify `$_SESSION['user_id']` is being set correctly
+- Ensure session cookie parameters are compatible with your domain
+- Clear browser cookies and try again
+
+## Future Development
+
+This minimal foundation is ready for incremental feature additions:
+
+1. Calendar UI (month view)
+2. Task management (CRUD operations)
+3. Event management (CRUD operations)
+4. Time blocking functionality
+5. Synchronization with external services
+
+See `SETUP.md` for more detailed setup instructions.
 
 ## License
 
