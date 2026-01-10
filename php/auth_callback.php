@@ -1,30 +1,11 @@
 <?php
-/**
- * OAuth Callback Handler
- * Handles the redirect from Google OAuth and exchanges authorization code for user info
- * 
- * OAuth Flow:
- * 1. User authenticates with Google
- * 2. Google redirects here with authorization code
- * 3. Exchange code for access token
- * 4. Use token to fetch user profile info
- * 5. Create/update user in database
- * 6. Establish session
- * 7. Redirect to dashboard
- */
+// Set session name BEFORE session_start()
+ini_set('session.name', 'LC_IDENTIFIER');
+session_start();
 
 require_once __DIR__ . '/config.php';
 
-// Start session
-session_start();
-
-/**
- * Display error message and log
- */
-function handleError($message, $logMessage = null) {
-    logEvent($logMessage ?? $message, 'error');
-    
-    // In production, you might want to redirect to an error page instead
+function handleError($message) {
     echo "<!DOCTYPE html>
 <html>
 <head>
@@ -32,38 +13,28 @@ function handleError($message, $logMessage = null) {
     <style>
         body { font-family: Arial, sans-serif; max-width: 600px; margin: 100px auto; padding: 20px; }
         .error { background: #ffebee; border: 1px solid #ef5350; border-radius: 4px; padding: 20px; color: #c62828; }
-        h2 { margin-top: 0; color: #c62828; }
-        a { color: #1976d2; text-decoration: none; }
-        a:hover { text-decoration: underline; }
+        a { color: #1976d2; }
     </style>
 </head>
 <body>
     <div class='error'>
         <h2>Authentication Error</h2>
         <p>" . htmlspecialchars($message) . "</p>
-        <p><a href="../">Return to login page</a></p>
+        <p><a href=\"../index.html\">Return to login</a></p>
     </div>
 </body>
 </html>";
     exit;
 }
 
-// Check if authorization code is present
+// Check authorization code
 if (!isset($_GET['code'])) {
-    // Check if there's an error from Google
-    if (isset($_GET['error'])) {
-        $error = $_GET['error'];
-        handleError(
-            'Google authentication was cancelled or failed. Please try again.',
-            "OAuth error: $error"
-        );
-    }
     handleError('No authorization code received from Google.');
 }
 
 $authCode = $_GET['code'];
 
-// Exchange authorization code for access token
+// Exchange code for token
 $tokenData = [
     'code' => $authCode,
     'client_id' => OAUTH_CLIENT_ID,
@@ -80,125 +51,100 @@ curl_setopt($ch, CURLOPT_HTTPHEADER, ['Accept: application/json']);
 
 $tokenResponse = curl_exec($ch);
 $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-
-if (curl_errno($ch)) {
-    $error = curl_error($ch);
-    curl_close($ch);
-    handleError(
-        'Failed to connect to Google authentication service. Please try again later.',
-        "cURL error exchanging code for token: $error"
-    );
-}
-
 curl_close($ch);
 
 if ($httpCode !== 200) {
-    handleError(
-        'Failed to authenticate with Google. Please try again.',
-        "Token endpoint returned HTTP $httpCode: $tokenResponse"
-    );
+    handleError('Failed to authenticate with Google. Please try again.');
 }
 
 $tokenJson = json_decode($tokenResponse, true);
 if (!isset($tokenJson['access_token'])) {
-    handleError(
-        'Invalid response from Google authentication service.',
-        "No access token in response: $tokenResponse"
-    );
+    handleError('Invalid response from Google.');
 }
 
 $accessToken = $tokenJson['access_token'];
 
-// Fetch user information using access token
+// Fetch user info
 $ch = curl_init(OAUTH_USERINFO_ENDPOINT . '?access_token=' . urlencode($accessToken));
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch, CURLOPT_HTTPHEADER, ['Accept: application/json']);
 
 $userInfoResponse = curl_exec($ch);
 $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-
-if (curl_errno($ch)) {
-    $error = curl_error($ch);
-    curl_close($ch);
-    handleError(
-        'Failed to retrieve user information from Google. Please try again.',
-        "cURL error fetching user info: $error"
-    );
-}
-
 curl_close($ch);
 
 if ($httpCode !== 200) {
-    handleError(
-        'Failed to retrieve user information from Google.',
-        "Userinfo endpoint returned HTTP $httpCode: $userInfoResponse"
-    );
+    handleError('Failed to retrieve user information from Google.');
 }
 
 $userInfo = json_decode($userInfoResponse, true);
 
-// Validate required user information
 if (!isset($userInfo['id']) || !isset($userInfo['email'])) {
-    handleError(
-        'Incomplete user information received from Google.',
-        "Missing required fields in user info: $userInfoResponse"
-    );
+    handleError('Incomplete user information from Google.');
 }
 
-// Validate email format
-if (!validateEmail($userInfo['email'])) {
-    handleError(
-        'Invalid email address received from Google.',
-        "Invalid email format: {$userInfo['email']}"
-    );
+// Load or create user in JSON
+$usersFile = DATA_DIR . '/users.json';
+if (!is_dir(DATA_DIR)) {
+    mkdir(DATA_DIR, 0755, true);
 }
 
-// Extract user data
+$users = [];
+if (file_exists($usersFile)) {
+    $content = file_get_contents($usersFile);
+    $data = json_decode($content, true);
+    $users = $data['users'] ?? [];
+}
+
+// Find or create user
 $googleId = $userInfo['id'];
 $email = $userInfo['email'];
 $name = $userInfo['name'] ?? $email;
-$profilePicture = $userInfo['picture'] ?? '';
+$picture = $userInfo['picture'] ?? '';
 
-// Check if user exists
-$existingUser = findUserByGoogleId($googleId);
+$user = null;
+foreach ($users as $u) {
+    if ($u['google_id'] === $googleId) {
+        $user = $u;
+        break;
+    }
+}
 
-if ($existingUser) {
-    // Existing user - update last login
-    updateLastLogin($googleId);
-    $user = $existingUser;
-    logEvent("User logged in: $email", 'info');
-} else {
-    // New user - create account
-    $userData = [
+if (!$user) {
+    // Create new user
+    $user = [
+        'id' => uniqid('user_', true),
         'google_id' => $googleId,
         'email' => $email,
         'name' => $name,
-        'profile_picture' => $profilePicture
+        'picture' => $picture,
+        'created_at' => date('c'),
+        'last_login' => date('c')
     ];
+    $users[] = $user;
     
-    $user = createUser($userData);
-    
-    if (!$user) {
-        handleError(
-            'Failed to create user account. Please try again.',
-            "Failed to create user for email: $email"
-        );
+    // Save to JSON
+    file_put_contents($usersFile, json_encode(['users' => $users], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+} else {
+    // Update last login
+    foreach ($users as &$u) {
+        if ($u['id'] === $user['id']) {
+            $u['last_login'] = date('c');
+            break;
+        }
     }
-    
-    logEvent("New user registered: $email", 'info');
+    file_put_contents($usersFile, json_encode(['users' => $users], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
 }
 
-// Store user information in session
+// Set session
 $_SESSION['user_id'] = $user['id'];
 $_SESSION['google_id'] = $user['google_id'];
 $_SESSION['email'] = $user['email'];
 $_SESSION['name'] = $user['name'];
-$_SESSION['profile_picture'] = $user['profile_picture'];
+$_SESSION['profile_picture'] = $user['picture'];
 
 // Regenerate session ID for security
 session_regenerate_id(true);
-
-logEvent("Session established for user: {$user['email']}", 'info');
 
 // Redirect to dashboard
 header('Location: ../dashboard.php');

@@ -3,98 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="VIvacity Master Calendar - Smart AI Calendar & Scheduler">
     <title>VIvacity Master Calendar - Login</title>
-    
-    <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
-    <!-- Custom Styles -->
     <link rel="stylesheet" href="css/style.css">
-    
-    <!-- Google Sign-In Library -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
-    <noscript>
-        <style>
-            body .login-content,
-            body .google-signin-container {
-                display: none;
-            }
-            .no-js-message {
-                display: block !important;
-            }
-        </style>
-    </noscript>
-
     <div class="login-container">
-        <div class="login-card">
-            <div class="login-content">
-                <!-- Hero Section -->
-                <div class="login-hero">
-                    <div class="app-logo">📅</div>
-                    <h1 class="app-title">VIvacity Master Calendar</h1>
-                    <h2 class="app-subtitle">Smart AI Calendar & Scheduler</h2>
-                    <p class="app-description">
-                        Organize your life with intelligent scheduling, smart reminders, and seamless integration with your favorite apps. Let AI help you manage your time efficiently.
-                    </p>
-                </div>
-
-                <!-- Divider -->
-                <hr class="login-divider">
-
-                <!-- Loading State -->
-                <div id="loading-spinner" class="spinner-container" style="min-height: 100px; display: none;">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                </div>
-
-                <!-- Google Sign-In Section -->
-                <div class="google-signin-container">
-                    <p class="text-center text-muted mb-3">Sign in to get started</p>
-                    <div id="google-signin-button"></div>
-                    <p class="text-center text-muted mt-3" style="font-size: 0.875rem;">
-                        By signing in, you agree to our Terms of Service and Privacy Policy
-                    </p>
-                </div>
-
-                <!-- Error Message Container -->
-                <div id="error-message" class="error-message" style="display: none;"></div>
-            </div>
-
-            <!-- No-JS Fallback Message -->
-            <div class="no-js-message">
-                <strong>JavaScript is required</strong>
-                <p>Please enable JavaScript in your browser to use this application.</p>
-            </div>
-
-            <!-- Footer -->
-            <footer class="login-footer">
-                <p class="mb-1">© 2024 VIvacity Master Calendar</p>
-                <p>
-                    <a href="terms.html" target="_blank">Terms</a> · 
-                    <a href="privacy.html" target="_blank">Privacy</a> · 
-                    <a href="help.html" target="_blank">Help</a>
-                </p>
-            </footer>
+        <div class="login-box">
+            <h1>VIvacity Master Calendar</h1>
+            <p>Sign in with your Google account</p>
+            <div id="google-signin-button"></div>
         </div>
     </div>
 
-    <!-- Bootstrap JS Bundle -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- Auth Module -->
     <script src="js/auth.js"></script>
-    
-    <!-- Initialize Authentication -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // Initialize authentication
             Auth.initializeAuth();
         });
     </script>

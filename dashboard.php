@@ -1,362 +1,45 @@
 <?php
-// MUST be the first line - before any output
+// Set session name BEFORE session_start()
+ini_set('session.name', 'LC_IDENTIFIER');
 session_start();
 
 // Verify user is authenticated
 if (!isset($_SESSION['user_id'])) {
-    // Redirect to login if not authenticated
     header('Location: index.html');
     exit;
 }
 
-// Optional: Set variables for use in the HTML
-$userEmail = $_SESSION['user_email'] ?? '';
-$userName = $_SESSION['user_name'] ?? '';
+$userName = $_SESSION['name'] ?? $_SESSION['email'] ?? 'User';
+$userEmail = $_SESSION['email'] ?? '';
+$userPicture = $_SESSION['profile_picture'] ?? '';
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="VIvacity Master Calendar - Dashboard">
     <title>Dashboard - VIvacity Master Calendar</title>
-    
-    <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    
-    <!-- Bootstrap Icons -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-    
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
-    <!-- Custom Styles -->
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <!-- Loading State -->
-    <div id="loading-spinner" class="spinner-container">
-        <div class="text-center">
-            <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
-                <span class="visually-hidden">Loading...</span>
-            </div>
-            <p class="mt-3 text-muted">Verifying your session...</p>
-        </div>
-    </div>
-
-    <!-- Dashboard Content (hidden until authenticated) -->
-    <div id="dashboard-content" style="display: none;">
-        <!-- Navbar -->
-        <nav class="navbar navbar-expand-lg dashboard-navbar">
-            <div class="container-fluid">
-                <!-- Brand -->
-                <a class="navbar-brand" href="dashboard.php">
-                    <span>📅</span>
-                    <span>VIvacity</span>
-                </a>
-
-                <!-- User Profile Area -->
-                <div class="user-profile-area">
-                    <div class="user-profile-toggle" onclick="Auth.toggleUserDropdown()">
-                        <img 
-                            id="user-picture" 
-                            class="user-profile-picture" 
-                            src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%236c757d'%3E%3Cpath d='M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z'/%3E%3C/svg%3E"
-                            alt="Profile"
-                        >
-                        <span id="user-name" class="user-name">Loading...</span>
-                        <i class="bi bi-chevron-down"></i>
-                    </div>
-
-                    <!-- User Dropdown Menu -->
-                    <div id="user-dropdown" class="user-dropdown">
-                        <div class="user-dropdown-info">
-                            <strong id="dropdown-name">User Name</strong>
-                            <p id="dropdown-email" class="user-dropdown-email mb-0">user@example.com</p>
-                        </div>
-                        <button class="btn-logout" onclick="Auth.logout()">
-                            <i class="bi bi-box-arrow-right"></i> Sign Out
-                        </button>
-                    </div>
-                </div>
+    <div class="dashboard-container">
+        <nav class="navbar">
+            <h1>VIvacity Master Calendar</h1>
+            <div class="user-menu">
+                <?php if ($userPicture): ?>
+                    <img src="<?php echo htmlspecialchars($userPicture); ?>" alt="Profile" class="user-picture">
+                <?php endif; ?>
+                <span>Benvenuti, <?php echo htmlspecialchars($userName); ?></span>
+                <a href="php/logout.php" class="logout-btn">Logout</a>
             </div>
         </nav>
 
-        <!-- Main Content -->
-        <main class="dashboard-main p-0">
-            <div class="calendar-container">
-                <!-- Calendar Controls -->
-                <div class="calendar-controls px-4 pt-4">
-                    <div class="d-flex align-items-center gap-3">
-                        <button id="todayBtn" class="btn btn-outline-primary">Today</button>
-                        <div class="btn-group">
-                            <button id="prevMonth" class="btn btn-outline-secondary">
-                                <i class="bi bi-chevron-left"></i>
-                            </button>
-                            <button id="nextMonth" class="btn btn-outline-secondary">
-                                <i class="bi bi-chevron-right"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div id="currentMonthYear" class="month-year">Month Year</div>
-                    <div class="d-flex align-items-center gap-2">
-                        <div class="btn-group">
-                            <button class="btn btn-primary active">Month</button>
-                            <button class="btn btn-outline-secondary" disabled>Week</button>
-                            <button class="btn btn-outline-secondary" disabled>Day</button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Calendar Grid -->
-                <div class="p-4">
-                    <div id="calendarGrid" class="calendar-grid">
-                        <!-- Calendar days will be injected here -->
-                    </div>
-                </div>
+        <main class="dashboard-main">
+            <div class="welcome-section">
+                <h2>Benvenuti</h2>
+                <p>Welcome to VIvacity Master Calendar</p>
             </div>
         </main>
     </div>
-
-    <!-- Day Detail Modal -->
-    <div class="modal fade" id="dayModal" tabindex="-1" aria-labelledby="dayModalTitle" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="dayModalTitle">Day, Month DD, YYYY</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body" id="dayModalContent">
-                    <div id="eventsSection"></div>
-                    <div id="tasksSection" class="mt-3"></div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-success" id="addTaskBtn">
-                        <i class="bi bi-plus"></i> Add Task
-                    </button>
-                    <button type="button" class="btn btn-success" id="addEventBtn" style="display:none;">
-                        <i class="bi bi-plus"></i> Add Event
-                    </button>
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="taskModal" tabindex="-1">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="taskModalTitle">New Task</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body">
-            <form id="taskForm">
-              <div class="mb-3">
-                <label for="taskTitle" class="form-label">Task Title *</label>
-                <input type="text" class="form-control" id="taskTitle" name="title" required maxlength="255">
-                <small class="form-text text-muted">Max 255 characters</small>
-              </div>
-
-              <div class="mb-3">
-                <label for="taskDescription" class="form-label">Description</label>
-                <textarea class="form-control" id="taskDescription" name="description" rows="3"></textarea>
-              </div>
-
-              <div class="row">
-                <div class="col-md-6">
-                  <div class="mb-3">
-                    <label for="taskDueDate" class="form-label">Due Date</label>
-                    <input type="date" class="form-control" id="taskDueDate" name="dueDate">
-                  </div>
-                </div>
-                <div class="col-md-6">
-                  <div class="mb-3">
-                    <label for="taskDueTime" class="form-label">Due Time</label>
-                    <input type="time" class="form-control" id="taskDueTime" name="dueTime">
-                  </div>
-                </div>
-              </div>
-
-              <div class="row">
-                <div class="col-md-6">
-                  <div class="mb-3">
-                    <label for="taskPriority" class="form-label">Priority</label>
-                    <select class="form-select" id="taskPriority" name="priority">
-                      <option value="low">Low</option>
-                      <option value="medium" selected>Medium</option>
-                      <option value="high">High</option>
-                    </select>
-                  </div>
-                </div>
-                <div class="col-md-6">
-                  <div class="mb-3">
-                    <label for="taskStatus" class="form-label">Status</label>
-                    <select class="form-select" id="taskStatus" name="status">
-                      <option value="pending" selected>Pending</option>
-                      <option value="in_progress">In Progress</option>
-                      <option value="completed">Completed</option>
-                      <option value="cancelled">Cancelled</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              <div class="row">
-                <div class="col-md-6">
-                  <div class="mb-3">
-                    <label for="taskCategory" class="form-label">Category</label>
-                    <select class="form-select" id="taskCategory" name="category">
-                      <option value="other" selected>Other</option>
-                      <option value="work">Work</option>
-                      <option value="personal">Personal</option>
-                      <option value="health">Health</option>
-                    </select>
-                  </div>
-                </div>
-                <div class="col-md-6">
-                  <div class="mb-3">
-                    <label for="taskTags" class="form-label">Tags</label>
-                    <input type="text" class="form-control" id="taskTags" name="tags" placeholder="comma separated">
-                  </div>
-                </div>
-              </div>
-
-              <div class="mb-3">
-                <label for="taskNotes" class="form-label">Notes</label>
-                <textarea class="form-control" id="taskNotes" name="notes" rows="2"></textarea>
-              </div>
-
-              <input type="hidden" id="taskId" name="taskId">
-            </form>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-            <button type="button" class="btn btn-danger" id="taskDeleteBtn" style="display:none;">Delete</button>
-            <button type="button" class="btn btn-primary" id="taskSaveBtn">Save Task</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Event Modal (Enhanced for Task 9) -->
-    <div class="modal fade" id="eventModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">New Event</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="eventForm">
-                        <div class="mb-3">
-                            <label class="form-label">Title *</label>
-                            <input type="text" class="form-control" name="title" required maxlength="255">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Description</label>
-                            <textarea class="form-control" name="description" rows="2"></textarea>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label">Start Date</label>
-                                    <input type="date" class="form-control" name="startDate">
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label">Start Time</label>
-                                    <input type="time" class="form-control" name="startTime">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label">End Date</label>
-                                    <input type="date" class="form-control" name="endDate">
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label">End Time</label>
-                                    <input type="time" class="form-control" name="endTime">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Type</label>
-                            <select class="form-select" name="type">
-                                <option value="other">Other</option>
-                                <option value="meeting">Meeting</option>
-                                <option value="personal">Personal</option>
-                                <option value="focus_time">Focus Time</option>
-                            </select>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="eventSaveBtn">Save Event</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Bootstrap JS Bundle -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- Auth Module -->
-    <script src="js/auth.js"></script>
-
-    <!-- Tasks Module -->
-    <script src="js/tasks.js"></script>
-    
-    <!-- Events Module -->
-    <script src="js/events.js"></script>
-    
-    <!-- Sync Module -->
-    <script src="js/sync.js"></script>
-    
-    <!-- Calendar Module -->
-    <script src="js/calendar.js"></script>
-    
-    <!-- Dashboard Script -->
-    <script>
-        // Use the updateUserInterface function from before, but it's now simplified
-        document.addEventListener('DOMContentLoaded', async () => {
-            try {
-                const user = await Auth.checkSession();
-                if (user) {
-                    updateUserInterface(user);
-                    document.getElementById('loading-spinner').style.display = 'none';
-                    document.getElementById('dashboard-content').style.display = 'block';
-                    
-                    // Initialize event modal
-                    initializeEventModal();
-                    
-                    // Set up event save button listener
-                    const eventSaveBtn = document.getElementById('eventSaveBtn');
-                    if (eventSaveBtn) {
-                        eventSaveBtn.addEventListener('click', saveEvent);
-                    }
-                }
-            } catch (error) {
-                console.error('Error updating UI:', error);
-            }
-        });
-
-        function updateUserInterface(user) {
-            const userPicture = document.getElementById('user-picture');
-            if (user.profile_picture) {
-                userPicture.src = user.profile_picture;
-            }
-            document.getElementById('user-name').textContent = user.name || 'User';
-            document.getElementById('dropdown-name').textContent = user.name || 'User';
-            document.getElementById('dropdown-email').textContent = user.email || '';
-        }
-    </script>
 </body>
 </html>
